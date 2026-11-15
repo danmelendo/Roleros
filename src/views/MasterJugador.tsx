@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams } from "@tanstack/react-router";
 import {
   anadirItem,
+  asignarFicha,
   cambiarItem,
   fichaCompleta,
   guardarFicha,
@@ -23,6 +24,7 @@ import { claveNueva, conSigno, ESQUEMA, esObjeto, estaVisible, modificador, PLAN
 import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { Ojo } from "../components/Ojo";
+import { Retrato } from "../components/Retrato";
 
 /* ------------------------------------------------------------ utilidades -- */
 
@@ -99,7 +101,8 @@ export function MasterJugador() {
       jugadorId={jugadorId}
       nombreJugador={jugador?.nombre ?? jugadorId}
       oroJugador={jugador?.oro ?? 0}
-      guardada={ficha.data}
+      guardada={ficha.data?.datos ?? null}
+      asignada={ficha.data?.asignada ?? false}
       reveladas={reveladas.data}
       preguntas={preguntas.data ?? []}
       respuestas={respuestas.data ?? []}
@@ -108,12 +111,13 @@ export function MasterJugador() {
 }
 
 function Editor({
-  jugadorId, nombreJugador, oroJugador, guardada, reveladas, preguntas, respuestas,
+  jugadorId, nombreJugador, oroJugador, guardada, asignada, reveladas, preguntas, respuestas,
 }: {
   jugadorId: string;
   nombreJugador: string;
   oroJugador: number;
   guardada: FichaDatos | null;
+  asignada: boolean;
   reveladas: string[];
   preguntas: Pregunta[];
   respuestas: RespuestaMaster[];
@@ -143,6 +147,14 @@ function Editor({
     mutationFn: ({ ruta, si }: { ruta: string; si: boolean }) => revelar(jugadorId, ruta, si),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reveladas", jugadorId] }),
   });
+  const asignar = useMutation({
+    mutationFn: (si: boolean) => asignarFicha(jugadorId, si),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ficha-completa", jugadorId] });
+      qc.invalidateQueries({ queryKey: ["resumen-master"] });
+    },
+  });
+  const cuestionarioCompleto = preguntas.every((p) => respuestas.some((r) => r.pregunta_id === p.id));
 
   const setRev = useMemo(() => new Set(reveladas), [reveladas]);
   const ojo = (ruta: string, que: string) => (
@@ -158,7 +170,10 @@ function Editor({
     <main className="pantalla ancha">
       <header className="cabecera">
         <Link to="/master" className="enlace-tenue">← Biombo</Link>
-        <h1>{nombreJugador}</h1>
+        <div className="quien-soy">
+          <Retrato jugadorId={jugadorId} />
+          <h1>{nombreJugador}</h1>
+        </div>
         <p className="sub">
           {nueva ? "Ficha nueva: rellénala y guarda." : `${numVisibles} ${numVisibles === 1 ? "campo revelado" : "campos revelados"}. El ojo dorado es lo que ve el jugador.`}
         </p>
@@ -180,6 +195,30 @@ function Editor({
           ) : null;
         })}
       </details>
+
+      <section className="pagina">
+        <label className={`asignar ${asignada ? "si" : ""}`}>
+          <input
+            type="checkbox"
+            checked={asignada}
+            disabled={nueva || asignar.isPending}
+            onChange={(e) => asignar.mutate(e.target.checked)}
+          />
+          <span>
+            <span className="jugador-nombre">Ficha asignada</span>
+            <span className="nota">
+              {nueva
+                ? "Guarda la ficha antes de asignarla."
+                : !asignada
+                  ? "El jugador ve «Te están haciendo la ficha». Márcala cuando esté lista."
+                  : cuestionarioCompleto
+                    ? "El jugador ya ve su ficha (solo lo revelado y los PG)."
+                    : "Asignada, pero no la verá hasta que termine el cuestionario."}
+            </span>
+          </span>
+        </label>
+        {asignar.error && <p className="error">{asignar.error.message}</p>}
+      </section>
 
       <section className="pagina">
         <Celda etiqueta="Nombre del personaje">

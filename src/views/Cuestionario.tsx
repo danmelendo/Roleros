@@ -10,7 +10,10 @@ function PreguntaCard({ jugadorId, p, guardada }: { jugadorId: string; p: Pregun
   const [texto, setTexto] = useState(guardada && !p.opciones.includes(guardada) ? guardada : "");
   const enviar = useMutation({
     mutationFn: (r: string) => enviarRespuesta(jugadorId, p.id, r),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["respuestas", jugadorId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["respuestas", jugadorId] });
+      qc.invalidateQueries({ queryKey: ["ficha", jugadorId] }); // la ficha se abre al completar el cuestionario
+    },
   });
   const conOpciones = p.opciones.length > 0;
 

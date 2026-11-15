@@ -48,9 +48,32 @@ export async function enviarRespuesta(jugadorId: string, preguntaId: number, res
   ok(await supabase.rpc("enviar_respuesta", { p_jugador: jugadorId, p_pregunta: preguntaId, p_respuesta: respuesta }));
 }
 
-/** Solo lo revelado: el filtrado lo hace el servidor, nunca el cliente. */
-export async function fichaRevelada(jugadorId: string): Promise<FichaDatos> {
-  return ok(await supabase.rpc("get_ficha_revelada", { p_jugador: jugadorId })) ?? {};
+/** Solo lo revelado: el filtrado lo hace el servidor, nunca el cliente.
+ *  null = todavía no hay ficha que ver (cuestionario a medias o sin asignar). */
+export async function fichaRevelada(jugadorId: string): Promise<FichaDatos | null> {
+  return ok(await supabase.rpc("get_ficha_revelada", { p_jugador: jugadorId })) ?? null;
+}
+
+export async function retrato(jugadorId: string): Promise<string | null> {
+  return ok(await supabase.rpc("get_retrato", { p_jugador: jugadorId })) ?? null;
+}
+
+export async function ponerRetrato(jugadorId: string, imagen: string | null): Promise<void> {
+  ok(await supabase.rpc("poner_retrato", { p_jugador: jugadorId, p_imagen: imagen ?? "" }));
+}
+
+export type EntradaDiario = { id: number; texto: string; created_at: string; updated_at: string };
+
+export async function miDiario(jugadorId: string): Promise<EntradaDiario[]> {
+  return ok(await supabase.rpc("get_mi_diario", { p_jugador: jugadorId }));
+}
+
+export async function escribirDiario(jugadorId: string, id: number | null, texto: string): Promise<void> {
+  ok(await supabase.rpc("escribir_diario", { p_jugador: jugadorId, p_id: id, p_texto: texto }));
+}
+
+export async function borrarDiario(jugadorId: string, id: number): Promise<void> {
+  ok(await supabase.rpc("borrar_diario", { p_jugador: jugadorId, p_id: id }));
 }
 
 export async function misAcciones(jugadorId: string): Promise<Accion[]> {
@@ -109,9 +132,13 @@ export async function esMaster(): Promise<boolean> {
   return ok(await supabase.rpc("es_master")) === true;
 }
 
-export async function fichaCompleta(jugadorId: string): Promise<FichaDatos | null> {
-  const fila = ok(await supabase.from("fichas").select("datos").eq("jugador_id", jugadorId).maybeSingle());
-  return (fila as { datos: FichaDatos } | null)?.datos ?? null;
+export async function fichaCompleta(jugadorId: string): Promise<{ datos: FichaDatos; asignada: boolean } | null> {
+  return ok(await supabase.from("fichas").select("datos, asignada").eq("jugador_id", jugadorId).maybeSingle());
+}
+
+/** El tick de "asignada": desde ese momento el jugador ve su ficha. */
+export async function asignarFicha(jugadorId: string, si: boolean): Promise<void> {
+  ok(await supabase.from("fichas").update({ asignada: si }).eq("jugador_id", jugadorId));
 }
 
 export async function guardarFicha(jugadorId: string, datos: FichaDatos): Promise<void> {
@@ -128,20 +155,21 @@ export async function revelar(jugadorId: string, ruta: string, si: boolean): Pro
   else ok(await supabase.from("ficha_revelado").delete().eq("jugador_id", jugadorId).eq("campo_path", ruta));
 }
 
-export type ResumenJugador = { nombre?: string; clase?: string; nivel?: number; respuestas: number; pendientes: number };
+export type ResumenJugador = { nombre?: string; clase?: string; nivel?: number; asignada?: boolean; respuestas: number; pendientes: number };
 
 /** Portada del biombo: de cada jugador, su personaje, el cuestionario y sus acciones pendientes. */
 export async function resumenMaster(): Promise<Record<string, ResumenJugador>> {
   const [fichas, resp, pend] = await Promise.all([
-    supabase.from("fichas").select("jugador_id, datos"),
+    supabase.from("fichas").select("jugador_id, datos, asignada"),
     supabase.from("cuestionario_resp").select("jugador_id"),
     supabase.from("acciones_offrol").select("jugador_id").eq("estado", "pendiente"),
   ]);
   const out: Record<string, ResumenJugador> = {};
   const de = (id: string) => (out[id] ??= { respuestas: 0, pendientes: 0 });
   for (const x of ok(pend) as { jugador_id: string }[]) de(x.jugador_id).pendientes++;
-  for (const f of ok(fichas) as { jugador_id: string; datos: FichaDatos }[]) {
+  for (const f of ok(fichas) as { jugador_id: string; datos: FichaDatos; asignada: boolean }[]) {
     const r = de(f.jugador_id);
+    r.asignada = f.asignada;
     if (typeof f.datos.nombre === "string" && f.datos.nombre) r.nombre = f.datos.nombre;
     if (typeof f.datos.clase === "string" && f.datos.clase) r.clase = f.datos.clase;
     if (typeof f.datos.nivel === "number") r.nivel = f.datos.nivel;

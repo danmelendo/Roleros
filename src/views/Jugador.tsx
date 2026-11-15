@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate, useParams } from "@tanstack/rea
 import { fichaRevelada, listarJugadores, misAcciones } from "../lib/api";
 import { guardarJugador } from "../lib/jugador";
 import { nubeConfigurada } from "../lib/supabase";
+import { Retrato } from "../components/Retrato";
 
 /* Cuándo vio el jugador sus acciones por última vez: para el punto rojo de
    "el máster te ha contestado". Por móvil, en localStorage. */
@@ -43,15 +44,19 @@ export function JugadorLayout() {
     { to: "/j/$jugadorId", nombre: "Ficha", exacta: true },
     { to: "/j/$jugadorId/petate", nombre: "Petate" },
     { to: "/j/$jugadorId/acciones", nombre: "Acciones", punto: contestadas },
+    { to: "/j/$jugadorId/diario", nombre: "Diario" },
     { to: "/j/$jugadorId/cuestionario", nombre: "Cuestionario" },
   ] as const;
 
   return (
     <main className="pantalla">
       <header className="cabecera fila">
-        <div>
-          <p className="sub">{yo?.nombre ?? "…"}</p>
-          <h1 className={nombre ? "" : "desconocido"}>{nombre ?? "¿Quién eres?"}</h1>
+        <div className="quien-soy">
+          <Retrato jugadorId={jugadorId} editable />
+          <div>
+            <p className="sub">{yo?.nombre ?? "…"}</p>
+            <h1 className={nombre ? "" : "desconocido"}>{nombre ?? "¿Quién eres?"}</h1>
+          </div>
         </div>
         <button
           className="boton chico claro"

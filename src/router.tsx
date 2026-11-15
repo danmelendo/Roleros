@@ -5,6 +5,7 @@ import { Ficha } from "./views/Ficha";
 import { Petate } from "./views/Petate";
 import { Acciones } from "./views/Acciones";
 import { Cuestionario } from "./views/Cuestionario";
+import { Diario } from "./views/Diario";
 import { Master } from "./views/Master";
 import { MasterAcciones } from "./views/MasterAcciones";
 import { MasterJugador } from "./views/MasterJugador";
@@ -29,6 +30,7 @@ const deJugador = [
   createRoute({ getParentRoute: () => jugador, path: "/", component: Ficha }),
   createRoute({ getParentRoute: () => jugador, path: "petate", component: Petate }),
   createRoute({ getParentRoute: () => jugador, path: "acciones", component: Acciones }),
+  createRoute({ getParentRoute: () => jugador, path: "diario", component: Diario }),
   createRoute({ getParentRoute: () => jugador, path: "cuestionario", component: Cuestionario }),
 ];
 

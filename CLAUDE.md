@@ -26,15 +26,16 @@ App de la campaña de rol de Dan (Pathfinder 1e, Ustalav), con 3 jugadores. UI e
 ```
 src/
   main.tsx              QueryClient + Router + fuentes + service worker
-  router.tsx            /  ·  /j/$id (ficha, petate, acciones, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/$id
+  router.tsx            /  ·  /j/$id (ficha, petate, acciones, diario, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/$id
   lib/api.ts            TODAS las llamadas a Supabase, tipadas
   lib/ficha.ts          ESQUEMA de la ficha (lo usan el biombo y el jugador), PLANTILLA, estaVisible()
   lib/formato.ts        tipos de acción, oro, fechas relativas
   lib/sesion.ts         useSesion(): sesión + es_master()
   lib/jugador.ts        jugador elegido en localStorage
   components/Ojo.tsx    interruptor de revelado
+  components/Retrato.tsx  retrato redondo; reduce la foto en el cliente antes de subirla
   views/Jugador.tsx     cabecera y pestañas del jugador (+ punto de "el máster te ha contestado")
-  views/                Ficha, Petate, Acciones, Cuestionario · Master, MasterAcciones, MasterJugador
+  views/                Ficha (con pantalla de espera), Petate, Acciones, Diario, Cuestionario · Master, MasterAcciones, MasterJugador
 supabase/migrations/    esquema, RLS y funciones
 supabase/seeds/         cuestionario (las preguntas, sin trama)
 ```
@@ -43,9 +44,10 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
 
 - **El jugador nunca recibe datos ocultos.**
   - Las tablas privadas no tienen políticas para `anon`.
-  - El jugador lee por RPC (`get_ficha_revelada`, `get_mi_petate`, `get_mis_acciones`, `get_mis_respuestas`).
-  - No añadas `select` a `fichas`, `inventario` ni `acciones_offrol` en código del jugador.
-- **Escrituras de `anon` solo por funciones `security definer` que validan lo que reciben:** `enviar_respuesta`, `crear_accion` (máximo 10 pendientes) y `retirar_accion` (solo si está pendiente). Ninguna política de `insert` para `anon`.
+  - El jugador lee por RPC (`get_ficha_revelada`, `get_mi_petate`, `get_mis_acciones`, `get_mis_respuestas`, `get_mi_diario`, `get_retrato`).
+  - No añadas `select` a `fichas`, `inventario`, `acciones_offrol`, `diario` ni `retratos` en código del jugador.
+- **La ficha tiene puerta:** `get_ficha_revelada` devuelve `null` mientras el jugador no haya respondido todas las preguntas activas o la ficha no tenga `asignada = true` (el tick del biombo). El cliente solo decide qué mensaje de espera enseña; la puerta es del servidor.
+- **Escrituras de `anon` solo por funciones `security definer` que validan lo que reciben:** `enviar_respuesta`, `crear_accion` (máximo 10 pendientes), `retirar_accion` (solo si está pendiente), `escribir_diario` / `borrar_diario` (máximo 300 entradas) y `poner_retrato` (data URL de imagen, ≤ 400 KB). Ninguna política de `insert` para `anon`.
 - **Máster = sesión + fila en `masters`.** `es_master()` es la puerta de todas las políticas. El registro público está cerrado. El login acepta `Dan`, que se traduce a `dan@roleros.local`.
 - **`resolver_accion` es atómica:** responde, mueve el oro (sin dejarlo en negativo) y mete objetos en `inventario`, todo en una transacción. No lo repartas en llamadas sueltas desde el cliente.
 - **Ficha = JSON libre, sin motor de reglas de PF1e.** Se edita con formulario, nunca en JSON.

@@ -5,6 +5,7 @@ import { listarJugadores, listarPreguntas, resumenMaster } from "../lib/api";
 import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { supabase } from "../lib/supabase";
+import { Retrato } from "../components/Retrato";
 
 /* Supabase Auth exige correo. El máster entra con un nombre corto ("Dan")
    que se traduce a <nombre>@roleros.local; un correo completo también vale. */
@@ -84,15 +85,19 @@ export function Master() {
             {jugadores.data?.map((j) => {
               const r = resumen.data?.[j.id];
               const pj = r?.nombre ? `${r.nombre}${r.clase ? `, ${r.clase}` : ""}${r.nivel ? ` ${r.nivel}` : ""}` : "Sin ficha";
+              const estado = r?.asignada === undefined ? "" : r.asignada ? " · asignada" : " · sin asignar";
               return (
-                <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="pagina jugador" style={{ borderLeftColor: j.color ?? undefined }}>
-                  <span className="fila">
-                    <span className="jugador-nombre">{j.nombre}</span>
-                    {!!r?.pendientes && <span className="globo" title="Acciones por responder">{r.pendientes}</span>}
-                  </span>
-                  <span className="jugador-pj">{pj}</span>
-                  <span className="jugador-meta">
-                    {oro(j.oro)} · Cuestionario {r?.respuestas ?? 0}/{preguntas.data?.length ?? "…"}
+                <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="pagina jugador con-retrato" style={{ borderLeftColor: j.color ?? undefined }}>
+                  <Retrato jugadorId={j.id} />
+                  <span className="jugador-datos">
+                    <span className="fila">
+                      <span className="jugador-nombre">{j.nombre}</span>
+                      {!!r?.pendientes && <span className="globo" title="Acciones por responder">{r.pendientes}</span>}
+                    </span>
+                    <span className="jugador-pj">{pj}{estado}</span>
+                    <span className="jugador-meta">
+                      {oro(j.oro)} · Cuestionario {r?.respuestas ?? 0}/{preguntas.data?.length ?? "…"}
+                    </span>
                   </span>
                 </Link>
               );
