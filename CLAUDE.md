@@ -68,6 +68,10 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - Las listas van como objetos con clave estable (`dotes.dote-1`), nunca arrays.
   - Las claves van en minúsculas ascii (lo exige el `CHECK` de `campo_path`).
   - Las claves que no están en `ESQUEMA` se conservan al guardar.
+- **Habilidades = catálogo fijo de PF1e** (`HABILIDADES` en `ficha.ts`, con clave estable por habilidad: `habilidades.percepcion`).
+  - Se rellenan rangos, «de clase» y otros; `conTotales()` calcula el total (rangos + atributo + 3 de clase con rangos + otros + `penalizador_armadura`) y **se guarda con la ficha**, para que el jugador vea el total sin tener revelados los atributos. `total = null`: solo entrenada y sin rangos.
+  - Artesanía, Interpretar y Profesión admiten copias (`artesania-2`, con `base`).
+  - La mesa de combate lee la Percepción de `habilidades.percepcion.total`.
 - **Los objetos no van en la ficha: van en el petate** (`inventario` + `jugadores.oro`). Un objeto con `visible = false` existe, pero el jugador no lo ve.
 - **Los PG se ven siempre.** Revelar un padre revela todo lo que cuelga de él.
 - **Para comparar fichas usa `canon()`**, que ordena las claves. jsonb las devuelve reordenadas, y un `JSON.stringify` a secas dejaba el aviso de "Cambios sin guardar" encendido tras guardar.

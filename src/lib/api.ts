@@ -229,7 +229,7 @@ export async function pjsParaCombate(): Promise<PJCombate[]> {
   return jugadores.filter((j) => j.activo).map((j) => {
     const f = porId.get(j.id);
     const d = sub(f), pg = sub(d.pg), at = sub(d.atributos), co = sub(d.combate), sa = sub(d.salvaciones);
-    const perc = Object.values(sub(d.habilidades)).map(sub).find((h) => typeof h.nombre === "string" && /percep/i.test(h.nombre));
+    const perc = sub(sub(d.habilidades).percepcion);
     return {
       jugadorId: j.id,
       jugador: j.nombre,
@@ -240,7 +240,7 @@ export async function pjsParaCombate(): Promise<PJCombate[]> {
       ca: n(co.ca), toque: n(co.toque), desprevenido: n(co.desprevenido), ini: n(co.ini), dmc: n(co.dmc),
       con: n(at.con),
       fort: n(sa.fort), ref: n(sa.ref), vol: n(sa.vol),
-      percepcion: perc ? n(perc.total) : null,
+      percepcion: n(perc.total),
     };
   });
 }

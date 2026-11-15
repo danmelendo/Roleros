@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { fichaRevelada, type FichaDatos } from "../lib/api";
 import { Retrato } from "../components/Retrato";
-import { ESQUEMA, esObjeto, modificador, mostrar, conSigno, type Item } from "../lib/ficha";
+import { copiasDe, ESQUEMA, esObjeto, HABILIDADES, modificador, mostrar, conSigno, type DatosHabilidad, type Item } from "../lib/ficha";
 import { nubeConfigurada } from "../lib/supabase";
 
 /* El jugador solo recibe lo revelado (lo filtra el servidor). Aquí, lo que no
@@ -74,6 +74,42 @@ function Cuerpo({ f }: { f: FichaDatos }) {
                   );
                 })}
               </div>
+            </Seccion>
+          );
+        }
+
+        if (s.tipo === "habilidades") {
+          /* Llegan solo las reveladas (con su total ya calculado). Si hay alguna,
+             se pinta el catálogo entero y las demás quedan con "?". */
+          const hab = esObjeto(f.habilidades) ? f.habilidades : {};
+          const filas = HABILIDADES.flatMap((def) => [
+            { k: def.clave, def },
+            ...(def.abierta ? copiasDe(def.clave, hab).map((k) => ({ k, def })) : []),
+          ]);
+          const alguna = filas.some(({ k }) => esObjeto(hab[k]));
+          return (
+            <Seccion key={s.clave} titulo={s.titulo} vacia={!alguna}>
+              {!alguna ? (
+                <p className="hueco">No lo recuerdas.</p>
+              ) : (
+                <ul className="habilidades">
+                  {filas.map(({ k, def }) => {
+                    const h = esObjeto(hab[k]) ? (hab[k] as DatosHabilidad) : null;
+                    return (
+                      <li key={k} className={h ? (h.clase ? "de-clase" : "") : "vacia"}>
+                        <span className="hab-nombre">
+                          {def.nombre}
+                          {h?.detalle && <span className="tenue-inline"> ({h.detalle})</span>}
+                          {h?.clase && <span className="hab-at" title="Habilidad de clase">clase</span>}
+                        </span>
+                        <span className="cifra">
+                          {!h ? <Olvido /> : typeof h.total === "number" ? conSigno(h.total) : <span className="tenue-inline" title="Sin entrenar">—</span>}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </Seccion>
           );
         }

@@ -18,6 +18,7 @@ export type Seccion =
   | { tipo: "pg"; clave: "pg"; titulo: string }                                   // siempre visible
   | { tipo: "grupo"; clave: string; titulo: string; campos: Campo[]; mod?: boolean }
   | { tipo: "lista"; clave: string; titulo: string; singular: string; conTotal?: boolean }
+  | { tipo: "habilidades"; clave: "habilidades"; titulo: string }
   | { tipo: "texto"; clave: string; titulo: string };
 
 export type Item = { nombre?: string; texto?: string; total?: number };
@@ -65,7 +66,7 @@ export const ESQUEMA: Seccion[] = [
       { clave: "vol", etiqueta: "Voluntad", corta: "Vol.", tipo: "numero", signo: true },
     ],
   },
-  { tipo: "lista", clave: "habilidades", titulo: "Habilidades", singular: "habilidad", conTotal: true },
+  { tipo: "habilidades", clave: "habilidades", titulo: "Habilidades" },
   { tipo: "lista", clave: "rasgos", titulo: "Rasgos de clase", singular: "rasgo" },
   { tipo: "lista", clave: "dotes", titulo: "Dotes", singular: "dote" },
   { tipo: "lista", clave: "conjuros", titulo: "Magia", singular: "conjuro" },
@@ -90,6 +91,95 @@ export const PLANTILLA: FichaDatos = {
   conjuros: {},
   trasfondo: "",
 };
+
+/* ------------------------------------------------------------ habilidades -- */
+
+export type Atributo = "fue" | "des" | "con" | "int" | "sab" | "car";
+
+/** Una habilidad de PF1e. entrenada = solo se puede usar con rangos; armadura = le
+    afecta el penalizador de armadura; abierta = lleva especialidad (Artesanía…). */
+export type DefHabilidad = { clave: string; nombre: string; at: Atributo; entrenada?: boolean; armadura?: boolean; abierta?: boolean };
+
+const conocimiento = (clave: string, que: string): DefHabilidad => ({ clave: `conocimiento-${clave}`, nombre: `Conocimiento (${que})`, at: "int", entrenada: true });
+
+export const HABILIDADES: DefHabilidad[] = [
+  { clave: "acrobacias", nombre: "Acrobacias", at: "des", armadura: true },
+  { clave: "artesania", nombre: "Artesanía", at: "int", abierta: true },
+  { clave: "averiguar-intenciones", nombre: "Averiguar intenciones", at: "sab" },
+  conocimiento("arcano", "arcano"),
+  conocimiento("dungeons", "dungeons"),
+  conocimiento("geografia", "geografía"),
+  conocimiento("historia", "historia"),
+  conocimiento("ingenieria", "ingeniería"),
+  conocimiento("local", "local"),
+  conocimiento("naturaleza", "naturaleza"),
+  conocimiento("nobleza", "nobleza"),
+  conocimiento("planos", "los planos"),
+  conocimiento("religion", "religión"),
+  { clave: "conocimiento-conjuros", nombre: "Conocimiento de conjuros", at: "int", entrenada: true },
+  { clave: "diplomacia", nombre: "Diplomacia", at: "car" },
+  { clave: "disfrazarse", nombre: "Disfrazarse", at: "car" },
+  { clave: "enganar", nombre: "Engañar", at: "car" },
+  { clave: "escapismo", nombre: "Escapismo", at: "des", armadura: true },
+  { clave: "interpretar", nombre: "Interpretar", at: "car", abierta: true },
+  { clave: "intimidar", nombre: "Intimidar", at: "car" },
+  { clave: "inutilizar-mecanismo", nombre: "Inutilizar mecanismo", at: "des", entrenada: true, armadura: true },
+  { clave: "juego-de-manos", nombre: "Juego de manos", at: "des", entrenada: true, armadura: true },
+  { clave: "linguistica", nombre: "Lingüística", at: "int", entrenada: true },
+  { clave: "montar", nombre: "Montar", at: "des", armadura: true },
+  { clave: "nadar", nombre: "Nadar", at: "fue", armadura: true },
+  { clave: "percepcion", nombre: "Percepción", at: "sab" },
+  { clave: "profesion", nombre: "Profesión", at: "sab", entrenada: true, abierta: true },
+  { clave: "sanar", nombre: "Sanar", at: "sab" },
+  { clave: "sigilo", nombre: "Sigilo", at: "des", armadura: true },
+  { clave: "supervivencia", nombre: "Supervivencia", at: "sab" },
+  { clave: "tasacion", nombre: "Tasación", at: "int" },
+  { clave: "trato-animales", nombre: "Trato con animales", at: "car", entrenada: true },
+  { clave: "trepar", nombre: "Trepar", at: "fue", armadura: true },
+  { clave: "usar-objeto-magico", nombre: "Usar objeto mágico", at: "car", entrenada: true },
+  { clave: "volar", nombre: "Volar", at: "des", armadura: true },
+];
+
+export const CORTO: Record<Atributo, string> = { fue: "FUE", des: "DES", con: "CON", int: "INT", sab: "SAB", car: "CAR" };
+
+/** Lo que se guarda de cada habilidad. total lo calcula conTotales(); null = sin rangos y solo entrenada. */
+export type DatosHabilidad = { rangos?: number; clase?: boolean; otros?: number; detalle?: string; base?: string; total?: number | null };
+
+/** Penalizador de armadura (clave de primer nivel; no está en ESQUEMA, así que el jugador no lo ve). */
+export const PENALIZADOR = "penalizador_armadura";
+
+/** Definición de una entrada: por su clave o, si es una copia (artesania-2), por su base. */
+export function defHabilidad(clave: string, h: DatosHabilidad | undefined): DefHabilidad | undefined {
+  return HABILIDADES.find((d) => d.clave === clave) ?? HABILIDADES.find((d) => d.abierta && d.clave === h?.base);
+}
+
+/** Copias de las habilidades abiertas (una segunda Artesanía, otra Profesión…), en el orden en que se añadieron. */
+export function copiasDe(base: string, habilidades: Record<string, unknown>): string[] {
+  return Object.keys(habilidades).filter((k) => k !== base && esObjeto(habilidades[k]) && (habilidades[k] as DatosHabilidad).base === base).sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+}
+
+/** Rellena el total de cada habilidad: rangos + atributo + 3 si es de clase y tiene rangos + otros
+    + penalizador de armadura si le afecta. Se guarda en la ficha para que el jugador vea el total
+    aunque no tenga revelados los atributos. Todas las habilidades del catálogo quedan con su entrada. */
+export function conTotales(d: FichaDatos): FichaDatos {
+  const at = esObjeto(d.atributos) ? d.atributos : {};
+  const pen = typeof d[PENALIZADOR] === "number" ? -Math.abs(d[PENALIZADOR] as number) : 0;
+  const origen = esObjeto(d.habilidades) ? d.habilidades : {};
+  const hab: Record<string, unknown> = { ...origen };
+  for (const def of HABILIDADES) if (!esObjeto(hab[def.clave])) hab[def.clave] = {};
+  for (const [k, v] of Object.entries(hab)) {
+    if (!esObjeto(v)) continue;
+    const h = v as DatosHabilidad;
+    const def = defHabilidad(k, h);
+    if (!def) continue; // entradas que no son del catálogo: se conservan tal cual
+    const rangos = typeof h.rangos === "number" ? h.rangos : 0;
+    const total = def.entrenada && rangos < 1
+      ? null
+      : rangos + (modificador(at[def.at]) ?? 0) + (h.clase && rangos > 0 ? 3 : 0) + (typeof h.otros === "number" ? h.otros : 0) + (def.armadura ? pen : 0);
+    hab[k] = { ...h, total };
+  }
+  return { ...d, habilidades: hab };
+}
 
 /* ------------------------------------------------------------- utilidades -- */
 

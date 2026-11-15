@@ -21,7 +21,10 @@ import {
   type Pregunta,
   type RespuestaMaster,
 } from "../lib/api";
-import { claveNueva, conSigno, ESQUEMA, esObjeto, estaVisible, modificador, PLANTILLA, rutasDe, type Campo, type Item } from "../lib/ficha";
+import {
+  claveNueva, conSigno, conTotales, copiasDe, CORTO, defHabilidad, ESQUEMA, esObjeto, estaVisible, HABILIDADES, modificador,
+  PENALIZADOR, PLANTILLA, rutasDe, type Campo, type DatosHabilidad, type DefHabilidad, type Item,
+} from "../lib/ficha";
 import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { Ojo } from "../components/Ojo";
@@ -128,8 +131,10 @@ function Editor({
   const nueva = guardada === null;
   const original = guardada ?? PLANTILLA;
   const [datos, setDatos] = useState<FichaDatos>(() => structuredClone(original));
-  // Una ficha nueva cuenta como "por guardar" aunque no se toque: así se puede crear tal cual.
-  const sucio = nueva || canon(datos) !== canon(original);
+  /* Los totales de habilidades se calculan (conTotales) y se guardan con la ficha.
+     Una ficha nueva, o una cuyos totales guardados no cuadran, cuenta como "por guardar". */
+  const calculada = useMemo(() => conTotales(datos), [datos]);
+  const sucio = nueva || canon(calculada) !== canon(original);
 
   useEffect(() => {
     if (!sucio) return;
@@ -290,6 +295,19 @@ function Editor({
           );
         }
 
+        if (s.tipo === "habilidades") {
+          return (
+            <TablaHabilidades
+              key={s.clave}
+              titulo={s.titulo}
+              datos={calculada}
+              poner={poner}
+              ojo={ojo}
+              quitarRevelado={(ruta) => setRev.has(ruta) && alternar.mutate({ ruta, si: false })}
+            />
+          );
+        }
+
         if (s.tipo === "lista") {
           const lista = esObjeto(datos[s.clave]) ? (datos[s.clave] as Record<string, Item>) : {};
           const claves = Object.keys(lista);
@@ -378,12 +396,88 @@ function Editor({
               Deshacer
             </button>
           )}
-          <button type="button" className="boton chico" onClick={() => guardar.mutate(datos)} disabled={guardar.isPending}>
+          <button type="button" className="boton chico" onClick={() => guardar.mutate(calculada)} disabled={guardar.isPending}>
             {guardar.isPending ? "Guardando…" : "Guardar"}
           </button>
         </div>
       </div>
     </main>
+  );
+}
+
+/* ---------------------------------------------------------- habilidades ---- */
+
+/* Todas las habilidades de PF1e: solo se rellenan rangos, "de clase" y, si hace
+   falta, otros modificadores. El total lo calcula conTotales() con los atributos. */
+function TablaHabilidades({ titulo, datos, poner, ojo, quitarRevelado }: {
+  titulo: string;
+  datos: FichaDatos;
+  poner: (ruta: string[], v: unknown) => void;
+  ojo: (ruta: string, que: string) => ReactNode;
+  quitarRevelado: (ruta: string) => void;
+}) {
+  const hab = esObjeto(datos.habilidades) ? datos.habilidades : {};
+  const nivel = typeof datos.nivel === "number" ? datos.nivel : null;
+  const pen = datos[PENALIZADOR];
+  const repartidos = Object.values(hab).reduce<number>((n, h) => n + (esObjeto(h) && typeof h.rangos === "number" ? h.rangos : 0), 0);
+  const num = (v: string) => (v === "" ? undefined : Number(v));
+
+  const fila = (k: string, def: DefHabilidad, copia: boolean) => {
+    const h = (esObjeto(hab[k]) ? hab[k] : {}) as DatosHabilidad;
+    const nombre = def.abierta && h.detalle ? `${def.nombre} (${h.detalle})` : def.nombre;
+    const excede = nivel !== null && typeof h.rangos === "number" && h.rangos > nivel;
+    return (
+      <div key={k} className={`hab ${def.abierta ? "abierta" : ""}`}>
+        <div className="hab-nombre">
+          <span>{def.nombre}</span>
+          <span className="hab-at">{CORTO[def.at]}</span>
+          {def.entrenada && <span className="hab-marca" title="Solo entrenada: sin rangos no se puede usar">E</span>}
+          {def.armadura && <span className="hab-marca" title="Le afecta el penalizador de armadura">A</span>}
+        </div>
+        <input type="checkbox" className="hab-clase" aria-label={`${nombre}: habilidad de clase`} title="Habilidad de clase (+3 con algún rango)" checked={!!h.clase} onChange={(e) => poner(["habilidades", k, "clase"], e.target.checked || undefined)} />
+        <input className={`campo cifra ${excede ? "excede" : ""}`} type="number" inputMode="numeric" min={0} aria-label={`${nombre}: rangos`} title={excede ? "Más rangos que nivel" : undefined} placeholder="0" value={typeof h.rangos === "number" ? h.rangos : ""} onChange={(e) => poner(["habilidades", k, "rangos"], num(e.target.value))} />
+        <input className="campo cifra" type="number" inputMode="numeric" aria-label={`${nombre}: otros modificadores`} placeholder="0" value={typeof h.otros === "number" ? h.otros : ""} onChange={(e) => poner(["habilidades", k, "otros"], num(e.target.value))} />
+        <span className="hab-total cifra" title={h.total === null ? "Sin rangos no se puede usar" : undefined}>{typeof h.total === "number" ? conSigno(h.total) : "—"}</span>
+        {ojo(`habilidades.${k}`, nombre)}
+        {def.abierta && (
+          <div className="hab-detalle">
+            <input className="campo" aria-label={`${def.nombre}: especialidad`} placeholder="¿De qué? (herrería, laúd, marinero…)" value={h.detalle ?? ""} onChange={(e) => poner(["habilidades", k, "detalle"], e.target.value || undefined)} />
+            {copia ? (
+              <button type="button" className="quitar" title={`Quitar ${nombre}`} onClick={() => { poner(["habilidades", k], undefined); quitarRevelado(`habilidades.${k}`); }}>×</button>
+            ) : (
+              <button type="button" className="boton chico secundario" onClick={() => poner(["habilidades", claveNueva(def.clave, [def.clave, ...copiasDe(def.clave, hab)])], { base: def.clave })}>+ Otra</button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Entradas antiguas o ajenas al catálogo: se conservan, pero no se editan aquí.
+  const ajenas = Object.keys(hab).filter((k) => !defHabilidad(k, hab[k] as DatosHabilidad));
+
+  return (
+    <section className="pagina">
+      <div className="titulo-seccion">
+        <h2>{titulo}</h2>
+        {ojo("habilidades", "todas las habilidades")}
+      </div>
+      <div className="hab-cabecera">
+        <Celda etiqueta="Penalizador de armadura" titulo="Se resta a las habilidades marcadas con A">
+          <input className="campo cifra" type="number" inputMode="numeric" aria-label="Penalizador de armadura" placeholder="0" value={typeof pen === "number" ? pen : ""} onChange={(e) => poner([PENALIZADOR], num(e.target.value))} />
+        </Celda>
+        <p className="nota">
+          {repartidos} {repartidos === 1 ? "rango repartido" : "rangos repartidos"}
+          {nivel !== null && ` · máximo ${nivel} por habilidad`}
+        </p>
+      </div>
+      <div className="hab hab-titulos" aria-hidden="true">
+        <span>Habilidad</span><span>Clase</span><span>Rangos</span><span>Otros</span><span>Total</span><span />
+      </div>
+      {HABILIDADES.flatMap((def) => [fila(def.clave, def, false), ...(def.abierta ? copiasDe(def.clave, hab).map((k) => fila(k, def, true)) : [])])}
+      <p className="nota">E: solo entrenada (sin rangos no se puede usar). A: le resta el penalizador de armadura. Total = rangos + atributo + 3 si es de clase y tiene rangos + otros.</p>
+      {ajenas.length > 0 && <p className="nota">Hay {ajenas.length} habilidades antiguas guardadas fuera de la tabla: {ajenas.join(", ")}.</p>}
+    </section>
   );
 }
 
