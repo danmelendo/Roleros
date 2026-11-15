@@ -10,6 +10,7 @@ import { Diario } from "./views/Diario";
 import { Master } from "./views/Master";
 import { MasterAcciones } from "./views/MasterAcciones";
 import { MasterJugador } from "./views/MasterJugador";
+import { MasterCombate } from "./views/MasterCombate";
 import { nubeConfigurada } from "./lib/supabase";
 
 function Layout() {
@@ -40,8 +41,9 @@ const rutas = [
   createRoute({ getParentRoute: () => raiz, path: "/instalar", component: Instalar }),
   jugador.addChildren(deJugador),
   createRoute({ getParentRoute: () => raiz, path: "/master", component: Master }),
-  // Estática: gana a /master/$jugadorId.
+  // Estáticas: ganan a /master/$jugadorId.
   createRoute({ getParentRoute: () => raiz, path: "/master/acciones", component: MasterAcciones }),
+  createRoute({ getParentRoute: () => raiz, path: "/master/combate", component: MasterCombate }),
   createRoute({ getParentRoute: () => raiz, path: "/master/$jugadorId", component: MasterJugador }),
 ];
 

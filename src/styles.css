@@ -80,6 +80,8 @@ body::before {
   padding: calc(var(--st) + 14px) calc(var(--sr) + 14px) var(--hueco-abajo) calc(var(--sl) + 14px);
 }
 .shell:has(.ancha) { max-width: 720px; }
+/* La mesa de combate (portátil) ocupa todo el ancho y pone sus propios márgenes. */
+.shell:has(.mesa-combate) { max-width: none; padding: 0 0 var(--sb); }
 .pantalla { display: flex; flex-direction: column; gap: 10px; }
 .pantalla.ancha { padding-bottom: 64px; } /* sitio para la barra de guardar */
 

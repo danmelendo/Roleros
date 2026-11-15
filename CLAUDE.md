@@ -26,7 +26,7 @@ App de la campaña de rol de Dan (Pathfinder 1e, Ustalav), con 3 jugadores. UI e
 ```
 src/
   main.tsx              QueryClient + Router + fuentes + service worker
-  router.tsx            /  ·  /instalar  ·  /j/$id (ficha, petate, acciones, diario, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/$id
+  router.tsx            /  ·  /instalar  ·  /j/$id (ficha, petate, acciones, diario, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/combate  ·  /master/$id
   lib/instalar.ts       plataforma, ¿ya instalada?, botón de instalar de Chrome (beforeinstallprompt)
   lib/api.ts            TODAS las llamadas a Supabase, tipadas
   lib/ficha.ts          ESQUEMA de la ficha (lo usan el biombo y el jugador), PLANTILLA, estaVisible()
@@ -36,7 +36,8 @@ src/
   components/Ojo.tsx    interruptor de revelado
   components/Retrato.tsx  retrato redondo; reduce la foto en el cliente antes de subirla
   views/Jugador.tsx     cabecera y pestañas del jugador (+ punto de "el máster te ha contestado")
-  views/                Ficha (con pantalla de espera), Petate, Acciones, Diario, Cuestionario · Master, MasterAcciones, MasterJugador
+  views/                Ficha (con pantalla de espera), Petate, Acciones, Diario, Cuestionario · Master, MasterAcciones, MasterJugador, MasterCombate
+  combate/              mesa de combate del máster (portátil): mesa.ts (motor), bloque.ts (lee bloques de d20pfsrd), datos.ts (estados y conjuros), mesa.css
 supabase/migrations/    esquema, RLS y funciones
 supabase/seeds/         cuestionario (las preguntas, sin trama)
 ```
@@ -55,6 +56,11 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
 - **Escrituras de `anon` solo por funciones `security definer` que validan lo que reciben:** `enviar_respuesta`, `crear_accion` (máximo 10 pendientes), `retirar_accion` (solo si está pendiente), `escribir_diario` / `borrar_diario` (máximo 300 entradas) y `poner_retrato` (data URL de imagen, ≤ 400 KB). Ninguna política de `insert` para `anon`.
 - **Máster = sesión + fila en `masters`.** `es_master()` es la puerta de todas las políticas. El registro público está cerrado. El login acepta `Dan`, que se traduce a `dan@roleros.local`.
 - **`resolver_accion` es atómica:** responde, mueve el oro (sin dejarlo en negativo) y mete objetos en `inventario`, todo en una transacción. No lo repartas en llamadas sueltas desde el cliente.
+- **Mesa de combate (`/master/combate`):**
+  - Es una isla imperativa (`src/combate/mesa.ts`) montada en un Shadow DOM: sus estilos no se mezclan con los de la app. Pinta con plantillas de texto; escapa todo con `esc()`.
+  - Su estado vive en el `localStorage` del portátil (`roleros:mesa-combate`), no en Supabase.
+  - Los PJ salen de las fichas (`pjsParaCombate`). PG máx., CA, iniciativa, salvaciones, etc. mandan siempre las fichas; los PG actuales solo fuera de combate.
+  - Solo escribe en las fichas cuando el máster lo pide, y solo `pg.actual`, con `poner_pg` (nunca un `guardarFicha` desde la mesa).
 - **Ficha = JSON libre, sin motor de reglas de PF1e.** Se edita con formulario, nunca en JSON.
   - Las listas van como objetos con clave estable (`dotes.dote-1`), nunca arrays.
   - Las claves van en minúsculas ascii (lo exige el `CHECK` de `campo_path`).

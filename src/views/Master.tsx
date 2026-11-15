@@ -82,6 +82,14 @@ export function Master() {
             </span>
           </Link>
 
+          <Link to="/master/combate" className="pagina contador">
+            <span className="contador-num">⚔</span>
+            <span>
+              <span className="jugador-nombre">Mesa de combate</span>
+              <span className="jugador-meta">Iniciativa, PG, estados y conjuros · mejor en el portátil</span>
+            </span>
+          </Link>
+
           <div className="lista">
             {jugadores.data?.filter((j) => j.activo).map((j) => {
               const r = resumen.data?.[j.id];

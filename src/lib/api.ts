@@ -193,6 +193,63 @@ export async function resumenMaster(): Promise<Record<string, ResumenJugador>> {
   return out;
 }
 
+/* ------------------------------------------------------ mesa de combate -- */
+
+/** Lo que la mesa de combate necesita de cada PJ, sacado de su ficha. */
+export type PJCombate = {
+  jugadorId: string;
+  jugador: string;
+  color: string | null;
+  nombre: string;          // el del personaje; si no hay, el del jugador
+  tieneFicha: boolean;
+  pgMax: number | null;
+  pg: number | null;
+  ca: number | null;
+  toque: number | null;
+  desprevenido: number | null;
+  ini: number | null;
+  con: number | null;
+  fort: number | null;
+  ref: number | null;
+  vol: number | null;
+  dmc: number | null;
+  percepcion: number | null;
+};
+
+const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const sub = (v: unknown) => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+
+/** Jugadores activos con los números de su ficha (PG, CA, iniciativa, salvaciones…). */
+export async function pjsParaCombate(): Promise<PJCombate[]> {
+  const [jugadores, fichas] = await Promise.all([
+    listarJugadores(),
+    supabase.from("fichas").select("jugador_id, datos"),
+  ]);
+  const porId = new Map((ok(fichas) as { jugador_id: string; datos: FichaDatos }[]).map((f) => [f.jugador_id, f.datos]));
+  return jugadores.filter((j) => j.activo).map((j) => {
+    const f = porId.get(j.id);
+    const d = sub(f), pg = sub(d.pg), at = sub(d.atributos), co = sub(d.combate), sa = sub(d.salvaciones);
+    const perc = Object.values(sub(d.habilidades)).map(sub).find((h) => typeof h.nombre === "string" && /percep/i.test(h.nombre));
+    return {
+      jugadorId: j.id,
+      jugador: j.nombre,
+      color: j.color,
+      nombre: typeof d.nombre === "string" && d.nombre.trim() ? d.nombre.trim() : j.nombre,
+      tieneFicha: !!f,
+      pgMax: n(pg.max), pg: n(pg.actual),
+      ca: n(co.ca), toque: n(co.toque), desprevenido: n(co.desprevenido), ini: n(co.ini), dmc: n(co.dmc),
+      con: n(at.con),
+      fort: n(sa.fort), ref: n(sa.ref), vol: n(sa.vol),
+      percepcion: perc ? n(perc.total) : null,
+    };
+  });
+}
+
+/** Solo cambia pg.actual de la ficha (función poner_pg; el resto del JSON no se toca). */
+export async function apuntarPG(jugadorId: string, actual: number): Promise<void> {
+  ok(await supabase.rpc("poner_pg", { p_jugador: jugadorId, p_actual: actual }));
+}
+
 export async function respuestasDe(jugadorId: string): Promise<RespuestaMaster[]> {
   return ok(await supabase.from("cuestionario_resp").select("jugador_id, pregunta_id, respuesta, updated_at").eq("jugador_id", jugadorId));
 }
