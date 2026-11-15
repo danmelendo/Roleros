@@ -1,8 +1,9 @@
 /* Lector de bloques de estadísticas de Pathfinder 1e pegados de d20pfsrd.com
    (en inglés; también entiende las etiquetas habituales en castellano).
-   Saca lo que la mesa usa para automatizar: iniciativa, CA, PG, salvaciones,
-   DMC, Percepción, defensas y ataques (con crítico). Lo que no entiende lo
-   ignora: nunca falla, como mucho devuelve menos datos. */
+   Saca lo que la mesa enseña de la criatura: iniciativa, CA, PG, salvaciones,
+   DMC, Percepción, defensas y ataques (con crítico), para tenerlo a la vista
+   mientras se tira con dados en la mesa. Lo que no entiende lo ignora: nunca
+   falla, como mucho devuelve menos datos. */
 
 export type Ataque = {
   modo: "cc" | "dist";      // cuerpo a cuerpo / a distancia

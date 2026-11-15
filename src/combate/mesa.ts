@@ -70,8 +70,6 @@ type Criatura = {
   grupo?: string | null;
   espera: boolean;
 };
-type Salvacion = "fort" | "ref" | "vol";
-const NOMBRE_SALV: Record<Salvacion, string> = { fort: "Fortaleza", ref: "Reflejos", vol: "Voluntad" };
 type Efecto = { id: string; objetivo: string; nombre: string; tipo: TipoEfecto; rondas: number | null; dueno: string | null; nota: string };
 type Plantilla = { nombre: string; pg: string; ca: number; mod: number; notas: string; aliado: boolean; bloque?: Bloque | null };
 type Linea = { r: number; texto: string; sep?: boolean };
@@ -136,7 +134,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   let leyendo = false;
   let vivo = true;
   let bloque: Bloque | null = null;        // bloque de estadísticas leído en Enemigos
-  let atacante: string | null = null;      // de quién se enseñan los ataques (si no, el del turno)
   const B: Record<string, string | boolean> = {}; // borradores de los formularios del panel
 
   function cargar(): Mesa | null {
@@ -247,17 +244,15 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       return (y.ini ?? -99) - (x.ini ?? -99) || (y.mod || 0) - (x.mod || 0) || pos.get(a)! - pos.get(b)!;
     });
   }
-  function tirarIniciativas() {
-    const grupos: Record<string, number> = {};
-    for (const id of S.orden) {
-      const c = C(id)!;
-      if (c.pj || c.ini != null) continue;
-      if (c.grupo && grupos[c.grupo] != null) { c.ini = grupos[c.grupo]; continue; }
-      const t = d(20);
-      c.ini = t + (c.mod || 0);
-      if (c.grupo) grupos[c.grupo] = c.ini;
-      log(`Iniciativa de ${c.nombre}: ${t} ${signo(c.mod || 0)} = ${c.ini}.`);
+  /** Las tiradas se hacen en la mesa con dados: aquí solo se apuntan. Si la
+      criatura va en grupo, la misma iniciativa vale para todo el grupo. */
+  function ponerIniciativa(c: Criatura, v: number | null) {
+    const quienes = c.grupo ? Object.values(S.criaturas).filter((x) => x.grupo === c.grupo) : [c];
+    for (const x of quienes) {
+      x.ini = v;
+      if (S.activo && v != null && S.orden.includes(x.id)) insertarPorIni(x.id);
     }
+    log(`Iniciativa de ${c.grupo && quienes.length > 1 ? `${quienes.map((x) => x.nombre).join(", ")}` : c.nombre}: ${v ?? "—"}.`);
   }
   /** Con el combate empezado: se coloca según su iniciativa, sin reordenar al resto. */
   function insertarPorIni(id: string) {
@@ -268,12 +263,11 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     S.orden.splice(j, 0, id);
   }
   function empezar() {
-    const faltan = S.orden.map((id) => C(id)!).filter((c) => c.pj && c.ini == null);
-    if (faltan.length) return aviso(`Falta la iniciativa de ${faltan.map((c) => c.nombre).join(", ")}.`);
+    const faltan = S.orden.map((id) => C(id)!).filter((c) => c.ini == null);
+    if (faltan.length) return aviso(`Falta apuntar la iniciativa de ${faltan.map((c) => c.nombre).join(", ")}.`);
     if (!S.orden.length) return;
     cambiar(() => {
       avisos = [];
-      tirarIniciativas();
       ordenar();
       S.activo = true;
       S.ronda = 1;
@@ -302,7 +296,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   }
   function siguiente() {
     if (!S.activo || !S.orden.length) return;
-    atacante = null;
     cambiar(() => { avisos = []; avanzar(); });
   }
   function retrasar(id: string) {
@@ -383,7 +376,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
             id, pj: true, ficha: p.jugadorId, nombre: p.nombre, pgMax: 10, pg: 10, temp: 0, noLetal: 0,
             ca: 10, mod: 0, notas: "", ini: null, espera: false,
           };
-          if (!S.activo) S.orden.push(id);
         }
         c.nombre = p.nombre;
         c.jugador = p.jugador;
@@ -438,127 +430,36 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     if (!ids.length) aviso("Primero elige a alguien en la lista (clic; Ctrl+clic para varios).");
     return ids;
   }
-  /** Salvación de una criatura con bono conocido: { d20, total, salva }. */
-  function salvar(c: Criatura, tipo: Salvacion, cd: number) {
-    const bono = c[tipo];
-    if (bono == null) return null;
-    const r = d(20);
-    const total = r + bono;
-    return { r, total, salva: r === 20 || (r !== 1 && total >= cd) };
-  }
+  /** Las tiradas se hacen en la mesa: aquí solo se apunta la cantidad que sale. */
   function aplicarPG(modo: string) {
     const ids = objetivos();
     if (!ids.length) return;
-    const tipo = (B["sv-tipo"] || "") as Salvacion | "";
-    const cd = entero(B["sv-cd"], null);
-    if ((modo === "salv" || (modo === "dano" && tipo)) && (!tipo || cd == null)) {
-      return aviso("Para tirar salvaciones elige cuál (Fort, Ref o Vol) y pon la CD.");
-    }
-    if (modo === "salv") {
-      cambiar(() => {
-        avisos = [{ t: `<b>${NOMBRE_SALV[tipo as Salvacion]} CD ${cd}:</b>`, k: "", html: true }];
-        for (const id of ids) {
-          const c = C(id)!;
-          if (c.pj) { avisos.push({ t: `${esc(c.nombre)}: que la tire su jugador (${signo(c[tipo as Salvacion])}).`, k: "", html: true }); continue; }
-          const s = salvar(c, tipo as Salvacion, cd!);
-          const txt = s ? `${c.nombre}: ${s.total} (d20 ${s.r}) → ${s.salva ? "salva" : "falla"}` : `${c.nombre}: sin dato de ${NOMBRE_SALV[tipo as Salvacion]}`;
-          avisos.push({ t: txt, k: s?.salva ? "fin" : "malo" });
-          log(`Salvación de ${NOMBRE_SALV[tipo as Salvacion]} CD ${cd}: ${txt}.`);
-        }
-      });
-      return;
-    }
-    const tx = texto("pg-cant");
-    const t = tirar(tx);
-    if (!t || t.total < 0) return aviso(`No entiendo «${esc(tx)}». Pon un número o dados, como 2d6+3.`, "malo", true);
+    const x = entero(texto("pg-cant").replace(/^[+-]/, ""), null);
+    if (x == null || x < 0) return aviso("Pon la cantidad que ha salido en los dados (un número).");
     cambiar(() => {
       avisos = [];
-      if (t.dados) {
-        log(`Tirada ${tx}: ${t.total}.`);
-        avisos.push({ t: `Tirada ${esc(tx)}: <b>${t.total}</b>`, k: "", html: true });
-      }
-      const x = modo === "mitad" ? Math.floor(t.total / 2) : t.total;
+      const n = modo === "mitad" ? Math.floor(x / 2) : x;
       for (const id of ids) {
         const c = C(id)!;
-        if (modo === "dano" && tipo) {
-          // Daño con salvación: los enemigos tiran solos; los PJ, su jugador.
-          if (c.pj) {
-            avisos.push({ t: `<b>${esc(c.nombre)}</b>: que tire ${NOMBRE_SALV[tipo]} CD ${cd} (${signo(c[tipo])}). Si falla, ${t.total}; si salva, ${Math.floor(t.total / 2)}. Pónselo en su casilla.`, k: "malo", html: true });
-            continue;
-          }
-          const s = salvar(c, tipo, cd!);
-          const dano = s?.salva ? Math.floor(t.total / 2) : t.total;
-          avisos.push({ t: s ? `${c.nombre}: ${NOMBRE_SALV[tipo]} ${s.total} (d20 ${s.r}) → ${s.salva ? `salva, ${dano}` : `falla, ${dano}`}` : `${c.nombre}: sin dato de ${NOMBRE_SALV[tipo]}, daño completo`, k: s?.salva ? "fin" : "malo" });
-          danar(c, dano);
-        } else if (modo === "dano" || modo === "mitad") danar(c, x);
-        else if (modo === "curar") curar(c, x);
-        else if (modo === "nl") noLetal(c, x);
-        else if (modo === "temp") temporales(c, x);
+        if (modo === "dano" || modo === "mitad") danar(c, n);
+        else if (modo === "curar") curar(c, n);
+        else if (modo === "nl") noLetal(c, n);
+        else if (modo === "temp") temporales(c, n);
       }
       B["pg-cant"] = "";
     });
   }
 
-  /* ---------------------------------------------------------- ataques -- */
-  function atacar(cid: string, indices: number[]) {
-    const c = C(cid);
-    if (!c?.ataques) return;
-    const ids = [...sel].filter((x) => x !== cid && S.criaturas[x]);
-    const obj = ids.length === 1 ? C(ids[0])! : null;
-    let total = 0;
-    const lineas: string[] = [];
-    for (const i of indices) {
-      const a = c.ataques[i];
-      if (!a) continue;
-      const caObj = obj ? (a.toque ? obj.toque ?? obj.ca : obj.ca) : null;
-      for (let k = 0; k < a.n; k++) {
-        for (const bono of indices.length === 1 && a.n === 1 ? a.bonos.slice(0, 1) : a.bonos) {
-          const r = d(20);
-          const tot = r + bono;
-          const impacta = r === 20 ? true : r === 1 ? false : caObj == null ? null : tot >= caObj;
-          const nombre = `${a.nombre}${a.n > 1 ? ` ${k + 1}` : ""} ${signo(bono)}`;
-          let txt = `<b>${esc(nombre)}</b>: ${tot} <span class="tenue">(d20 ${r})</span>`;
-          if (impacta === false) { lineas.push(`${txt} → falla`); continue; }
-          let dano = a.dano ? Math.max(1, tirar(a.dano)?.total ?? 0) : 0;
-          if (r >= a.critMin && a.dano) {
-            const r2 = d(20);
-            const conf = r2 === 20 || (r2 !== 1 && (caObj == null ? null : r2 + bono >= caObj));
-            if (conf !== false && a.dano) {
-              let crit = 0;
-              for (let m = 0; m < a.critMult; m++) crit += Math.max(1, tirar(a.dano)?.total ?? 0);
-              txt += ` → <b>amenaza</b>, confirmación ${r2 + bono} (d20 ${r2})${conf === null ? ": si confirma, " + crit + " de daño; si no, " + dano : ` → <b>¡crítico!</b> ${crit} de daño`}`;
-              if (conf) dano = crit;
-            } else {
-              txt += ` → amenaza sin confirmar (${r2 + bono}), ${dano} de daño`;
-            }
-          } else {
-            txt += impacta ? ` → impacta, ${dano} de daño` : `, ${dano} de daño si impacta`;
-          }
-          if (a.extra) txt += ` <span class="tenue">${esc(a.extra)}</span>`;
-          if (impacta && caObj != null) total += dano;
-          lineas.push(txt);
-        }
-      }
-    }
-    cambiar(() => {
-      const contra = obj ? ` contra ${obj.nombre} (CA ${obj.ca}${obj.toque != null ? `, toque ${obj.toque}` : ""})` : "";
-      avisos = [{ t: `<b>Ataca ${esc(c.nombre)}</b>${esc(contra)}${obj ? "" : ' <span class="tenue">— elige un objetivo en la lista para comparar con su CA</span>'}`, k: "", html: true },
-        ...lineas.map((l) => ({ t: l, k: "" as const, html: true }))];
-      if (obj && total > 0) avisos.push({ t: `<button class="boton prim peq" data-a="aplicarAtaque" data-id="${obj.id}" data-n="${total}">Aplicar ${total} de daño a ${esc(obj.nombre)}</button>`, k: "malo", html: true });
-      log(`${c.nombre} ataca${contra}: ${lineas.map((l) => l.replace(/<[^>]+>/g, "")).join(" · ")}.`);
-    });
-  }
   function pgRapido(id: string, entrada: string, curarSiempre: boolean) {
-    let s = entrada.trim().replace(/−/g, "-");
-    if (!s) return;
+    let v = entrada.trim().replace(/−/g, "-");
+    if (!v) return;
     let cura = curarSiempre;
-    if (s.startsWith("+")) { cura = true; s = s.slice(1); } else if (s.startsWith("-")) s = s.slice(1);
-    const t = tirar(s);
-    if (!t) return aviso(`No entiendo «${esc(entrada)}».`, "malo", true);
+    if (v.startsWith("+")) { cura = true; v = v.slice(1); } else if (v.startsWith("-")) v = v.slice(1);
+    const x = entero(v, null);
+    if (x == null || x < 0) return aviso(`«${esc(entrada)}» no es un número.`, "malo", true);
     cambiar(() => {
       avisos = [];
-      if (t.dados) log(`Tirada ${s}: ${t.total}.`);
-      if (cura) curar(C(id)!, t.total); else danar(C(id)!, t.total);
+      if (cura) curar(C(id)!, x); else danar(C(id)!, x);
     });
   }
   function rondasDe(v: unknown, unidad: string): number | null {
@@ -620,7 +521,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       }
       const numerar = cuantos > 1 || hay;
       const grupo = comun && cuantos > 1 ? uid() : null;
-      let iniGrupo: number | null = null;
       for (let k = 0; k < cuantos; k++) {
         const pg = Math.max(1, tirar(pgTx)!.total);
         const id = uid();
@@ -634,17 +534,9 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         }
         S.criaturas[id] = c;
         S.orden.push(id);
-        if (S.activo) {
-          if (grupo && iniGrupo != null) c.ini = iniGrupo;
-          else {
-            const t = d(20);
-            c.ini = iniGrupo = t + mod;
-            log(`Iniciativa de ${c.nombre}: ${t} ${signo(mod)} = ${c.ini}.`);
-          }
-          insertarPorIni(id);
-        }
       }
       log(`Entran ${cuantos} × ${base}${/d/i.test(pgTx) ? ` (PG ${pgTx})` : ""}.`);
+      if (S.activo) avisos.push({ t: `Apunta la iniciativa de ${base} en su casilla para colocarlo${cuantos > 1 ? "s" : ""} en su sitio.`, k: "" });
       if (B["en-guardar"]) {
         const p: Plantilla = { nombre: base, pg: pgTx, ca, mod, notas, aliado, bloque };
         const i = S.plantillas.findIndex((x) => x.nombre.toLowerCase() === base.toLowerCase());
@@ -775,7 +667,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     if (c.pj && e?.t === "Incapacitado") out.push({ t: `<b>Incapacitado:</b> solo una acción de movimiento o estándar; si hace algo cansado, pierde 1 PG.`, k: "malo" });
     for (const ef of efectosDe(c.id)) {
       const r = ef.rondas != null ? ` <span class="tenue">(${ef.rondas} r)</span>` : "";
-      if (ef.nombre === "Confuso") out.push({ t: `<b>Confuso${r}:</b> ${esc(ef.nota)} <button class="boton peq" data-a="dporc">Tirar d%</button>`, k: "malo" });
+      if (ef.nombre === "Confuso") out.push({ t: `<b>Confuso${r}:</b> ${esc(ef.nota)}`, k: "malo" });
       else if (ef.nombre === "Sangrando") out.push({ t: `<b>Sangrando${r}:</b> pierde PG ahora, antes de actuar.`, k: "malo" });
       else out.push({ t: `<b>${esc(ef.nombre)}${r}:</b> ${esc(ef.nota) || '<span class="tenue">sin nota</span>'}`, k: ef.tipo === "buff" ? "fin" : ef.tipo === "debuff" ? "malo" : "" });
     }
@@ -792,13 +684,11 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       const hay = S.orden.length > 0;
       return `<div class="pagina banner">
         <div class="cab"><h2>Preparar el combate</h2>
-          <button class="boton" data-a="tirarIni" ${hay ? "" : "disabled"}>🎲 Tirar iniciativa de enemigos</button>
           <button class="boton prim grande" data-a="empezar" ${hay ? "" : "disabled"}>Empezar combate</button></div>
-        ${C(atacante) ? panelAtaques(C(atacante)!) : ""}
         <ol class="pasos tenue">
-          <li>Los PJ salen de sus fichas. En <b>Grupo</b>, marca quién está en este combate.</li>
-          <li>En <b>Enemigos</b>, añade las criaturas (los PG pueden ser dados: 2d8+4).</li>
-          <li>Apunta en su casilla la iniciativa que saque cada jugador. La de los enemigos se tira sola.</li>
+          <li>En <b>Grupo</b>, añade a la mesa los PJ (salen de sus fichas).</li>
+          <li>En <b>Enemigos</b>, añade las criaturas (o pega su bloque de d20pfsrd).</li>
+          <li>Tirad iniciativa con dados y apunta cada resultado en su casilla (un grupo de enemigos comparte la suya).</li>
           <li><b>Empezar combate</b> ordena la lista. Después, <kbd>Espacio</kbd> pasa el turno.</li>
         </ol>
         ${av ? `<div class="recordatorios">${av}</div>` : ""}
@@ -806,14 +696,13 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     }
     const c = C(S.turno);
     const rec = recordatorios(c).map((r) => `<div class="recordatorio ${r.k}">${r.t}</div>`).join("");
-    const quien = C(atacante) ?? c;
     return `<div class="pagina banner">
       <div class="cab">
         <span class="etiqueta">Ronda ${S.ronda}</span>
         <h2>${c ? "Turno de " + esc(c.nombre) : "Nadie puede actuar"}</h2>
         <button class="boton prim grande" data-a="siguiente" title="Espacio">Siguiente turno ▸</button>
       </div>
-      ${quien ? panelAtaques(quien) : ""}
+      ${c ? referencia(c) : ""}
       ${av || rec ? `<div class="recordatorios">${av}${rec}</div>` : ""}
     </div>`;
   }
@@ -840,24 +729,12 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     }
     return [...grupos.entries()].map(([k, v]) => `${k.startsWith("cc") ? "C/c" : "Dist."}: ${v.join(", ")}`);
   }
-  /** Botones de ataque de una criatura (en el banner). */
-  function panelAtaques(c: Criatura) {
-    const at = c.ataques ?? [];
-    if (!at.length) return "";
-    const ids = [...sel].filter((x) => x !== c.id && S.criaturas[x]);
-    const obj = ids.length === 1 ? C(ids[0])! : null;
-    const opciones = new Map<string, number[]>();
-    at.forEach((a, i) => { const k = `${a.modo}-${a.opcion}`; opciones.set(k, [...(opciones.get(k) ?? []), i]); });
-    const botones = [...opciones.entries()].map(([k, idx]) => {
-      const completo = idx.length > 1 || at[idx[0]].n > 1 || at[idx[0]].bonos.length > 1;
-      const sueltos = idx.map((i) => `<button class="boton peq" data-a="atacar" data-id="${c.id}" data-i="${i}" title="Un solo ataque">${esc(at[i].nombre)} ${signo(at[i].bonos[0])}</button>`).join("");
-      return `<div class="fila-ataques"><span class="etiqueta">${k.startsWith("cc") ? "Cuerpo a cuerpo" : "A distancia"}${opciones.size > 2 || /-[1-9]/.test(k) ? ` · opción ${Number(k.split("-")[1]) + 1}` : ""}</span>
-        ${completo ? `<button class="boton prim peq" data-a="atacar" data-id="${c.id}" data-i="${idx.join(",")}">Ataque completo</button>` : ""}${sueltos}</div>`;
-    }).join("");
+  /** Chuleta de la criatura del turno (solo para leer: los dados, en la mesa). */
+  function referencia(c: Criatura) {
+    const at = resumenAtaques(c);
+    if (!at.length && !c.especiales) return "";
     return `<div class="ataques">
-      <div class="cab-ataques"><b>Ataques de ${esc(c.nombre)}</b> <span class="tenue">${obj ? `contra ${esc(obj.nombre)} (CA ${obj.ca}${obj.toque != null ? `, toque ${obj.toque}` : ""})` : "· elige el objetivo en la lista"}</span>
-      ${atacante && atacante !== S.turno ? `<button class="icono" data-a="cerrarAtaques" title="Volver a los del turno">✕</button>` : ""}</div>
-      ${botones}
+      ${at.map((l) => `<div>${esc(l)}</div>`).join("")}
       ${c.especiales ? `<div class="tenue">Especiales: ${esc(c.especiales)}</div>` : ""}
     </div>`;
   }
@@ -905,7 +782,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="icono" data-a="bajar" data-id="${id}" title="Bajar" ${i >= S.orden.length - 1 ? "disabled" : ""}>↓</button>
         <button class="icono" data-a="editar" data-id="${id}" title="Editar">✎</button>
         <button class="icono" data-a="quitar" data-id="${id}" title="${c.pj ? "Sacar del combate" : "Quitar"}">✕</button>
-        ${c.ataques?.length ? `<button class="boton peq" data-a="verAtaques" data-id="${id}" title="Ver sus ataques arriba (p. ej. para un ataque de oportunidad)">⚔ Atacar</button>` : ""}
         ${turno ? `<button class="boton peq" data-a="retrasar" data-id="${id}" title="Retrasar el turno">Retrasar</button>` : ""}
         ${S.activo && c.espera ? `<button class="boton peq prim" data-a="actuar" data-id="${id}">Actuar ya</button>` : ""}
       </div>
@@ -939,20 +815,15 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     return `<div class="seleccion">${ids.length ? `Sobre: <b>${nombres}</b>` : `<span class="tenue">Haz clic en alguien de la lista para elegirlo (Ctrl+clic para varios).</span>`}</div>
 
     <div class="seccion"><span class="etiqueta">Daño y curación</span>
-      <div class="cantidad"><input type="text" data-b="pg-cant" data-foco="pg-cant" value="${val("pg-cant")}" placeholder="12 o 3d6+2"></div>
-      <div class="campos" style="margin-top:6px">
-        <label class="ancho2">Salvación<select data-b="sv-tipo">${opcion("", "— ninguna —", String(B["sv-tipo"] || ""))}${(["fort", "ref", "vol"] as Salvacion[]).map((k) => opcion(k, `${NOMBRE_SALV[k]} (mitad)`, String(B["sv-tipo"] || ""))).join("")}</select></label>
-        <label>CD<input type="number" data-b="sv-cd" data-foco="sv-cd" value="${val("sv-cd")}" placeholder="15"></label>
-        <label>&nbsp;<button class="boton" data-a="pg" data-m="salv" title="Solo tira la salvación, sin daño">Tirar</button></label>
-      </div>
+      <div class="cantidad"><input type="number" min="0" data-b="pg-cant" data-foco="pg-cant" value="${val("pg-cant")}" placeholder="Lo que ha salido en los dados"></div>
       <div class="fila-botones">
-        <button class="boton prim" data-a="pg" data-m="dano">${B["sv-tipo"] ? "Daño con salvación" : "Daño"}</button>
-        <button class="boton" data-a="pg" data-m="mitad" title="Para quien supera la salvación">½ daño</button>
+        <button class="boton prim" data-a="pg" data-m="dano">Daño</button>
+        <button class="boton" data-a="pg" data-m="mitad" title="Para quien ha superado la salvación">½ daño</button>
         <button class="boton" data-a="pg" data-m="curar">Curar</button>
         <button class="boton" data-a="pg" data-m="nl">No letal</button>
         <button class="boton" data-a="pg" data-m="temp">Temporales</button>
       </div>
-      <p class="ayuda">Si son dados, se tira una vez y vale para todos (como una bola de fuego). Con salvación, cada enemigo tira la suya y recibe todo o la mitad; a los PJ solo se les avisa, porque tiran sus jugadores. Primero se gastan los PG temporales.</p>
+      <p class="ayuda">Para varios a la vez (una bola de fuego): elígelos con Ctrl+clic, apunta lo que ha salido y pulsa Daño; a los que salvaron, ½ daño. Primero se gastan los PG temporales. En cada fila también puedes escribir el daño y pulsar Intro (con + delante, cura).</p>
     </div>
 
     <div class="seccion"><span class="etiqueta">Estados</span>
@@ -986,11 +857,10 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <div><b>${esc(b.nombre)}</b>${b.vd ? ` · VD ${esc(b.vd)}` : ""}${b.tipo ? ` <span class="tenue">· ${esc(b.tipo)}</span>` : ""}
           <button class="icono" data-a="olvidarBloque" title="Descartar el bloque" style="float:right">✕</button></div>
         <div class="tenue">PG ${b.pg ?? "—"}${b.dadosPG ? ` (${esc(b.dadosPG)})` : ""} · CA ${b.ca ?? "—"}${b.toque != null ? `, toque ${b.toque}, desprev. ${b.desprevenido}` : ""} · inic. ${signo(b.ini)} · Fort ${signo(b.fort)} Ref ${signo(b.ref)} Vol ${signo(b.vol)}${b.dmc != null ? ` · DMC ${b.dmc}` : ""}${b.percepcion != null ? ` · Percepción ${signo(b.percepcion)}` : ""}</div>
-        <div class="tenue">${b.ataques.length ? `${b.ataques.length} ataque${b.ataques.length > 1 ? "s" : ""} automáticos` : "Sin ataques reconocidos"}${b.defensas.length ? " · " + esc(b.defensas.join(" · ")) : ""}</div>
-        ${b.dadosPG ? `<div class="tenue">PG: la media (${b.pg}). Para tirarlos a cada uno, pon ${esc(b.dadosPG)} en PG.</div>` : ""}
+        <div class="tenue">${b.ataques.length ? `${b.ataques.length} ataque${b.ataques.length > 1 ? "s" : ""} (se ven en su fila y en su turno)` : "Sin ataques reconocidos"}${b.defensas.length ? " · " + esc(b.defensas.join(" · ")) : ""}</div>
       </div>` : "";
     return `<div class="seccion"><span class="etiqueta">Pegar bloque de estadísticas</span>
-      <textarea data-b="en-bloque" data-foco="en-bloque" rows="${b ? 2 : 5}" placeholder="Copia el bloque entero de d20pfsrd.com (desde «Ghoul CR 1» hasta CMB/CMD) y pégalo aquí.">${val("en-bloque")}</textarea>
+      <textarea data-b="en-bloque" data-foco="en-bloque" rows="${b ? 2 : 5}" placeholder="Copia el bloque entero de d20pfsrd.com (desde «Ghoul CR 1» hasta CMB/CMD) y pégalo aquí: rellena PG, CA, iniciativa, salvaciones, defensas y ataques.">${val("en-bloque")}</textarea>
       <div class="fila-botones"><button class="boton" data-a="leerBloque">Leer bloque</button></div>
       ${vista}
     </div>
@@ -998,7 +868,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       <div class="campos">
         <label class="ancho3">Nombre<input type="text" data-b="en-nombre" data-foco="en-nombre" value="${val("en-nombre")}" placeholder="Necrófago"></label>
         <label>Cuántos<input type="number" min="1" max="30" data-b="en-n" data-foco="en-n" value="${val("en-n", "1")}"></label>
-        <label class="ancho2">PG (número o dados)<input type="text" data-b="en-pg" data-foco="en-pg" value="${val("en-pg")}" placeholder="2d8+4"></label>
+        <label class="ancho2">PG<input type="text" data-b="en-pg" data-foco="en-pg" value="${val("en-pg")}" placeholder="13"></label>
         <label>CA<input type="number" data-b="en-ca" data-foco="en-ca" value="${val("en-ca")}" placeholder="10"></label>
         <label>Mod. inic.<input type="number" data-b="en-mod" data-foco="en-mod" value="${val("en-mod")}" placeholder="0"></label>
         <label class="ancho4">Notas<input type="text" data-b="en-notas" data-foco="en-notas" value="${val("en-notas")}" placeholder="Percepción +7, el mordisco paraliza…"></label>
@@ -1007,7 +877,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       <label class="casilla"><input type="checkbox" data-b="en-comun" ${B["en-comun"] === false ? "" : "checked"}> Misma iniciativa para todo el grupo</label>
       <label class="casilla"><input type="checkbox" data-b="en-guardar" ${B["en-guardar"] ? "checked" : ""}> Guardarla en mi bestiario</label>
       <div class="fila-botones"><button class="boton prim" data-a="anadirEnemigos">Añadir a la mesa</button></div>
-      <p class="ayuda">Con el combate empezado, tiran iniciativa al entrar y se colocan en su sitio.</p>
+      <p class="ayuda">Con el combate empezado, entran al final de la lista: apunta su iniciativa en su casilla y se colocan en su sitio (si van en grupo, basta con la de uno).</p>
     </div>
     <div class="seccion"><span class="etiqueta">Mi bestiario</span>
       ${S.plantillas.length ? `<div class="lineas">${S.plantillas.map((p, i) => `<div class="linea">
@@ -1020,19 +890,34 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
 
   function panelGrupo() {
     const pjs = Object.values(S.criaturas).filter((c) => c.pj).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const fuera = pjs.filter((c) => c.conFicha && !S.orden.includes(c.id));
     const cuando = S.leidas ? new Date(S.leidas).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "nunca";
-    return `<div class="seccion"><span class="etiqueta">Personajes (de las fichas)</span>
-      ${pjs.length ? `<div class="lineas">${pjs.map((c) => `<label class="linea">
-          <input type="checkbox" data-a="alternarPJ" data-id="${c.id}" ${S.orden.includes(c.id) ? "checked" : ""} title="En este combate">
+    return `<div class="seccion"><span class="etiqueta">Fichas de los jugadores</span>
+      ${pjs.length ? `<div class="lineas">${pjs.map((c) => {
+        const dentro = S.orden.includes(c.id);
+        const datos = c.conFicha
+          ? `${c.pg}/${c.pgMax} PG · CA ${c.ca} · inic. ${signo(c.mod || 0)}`
+          : "todavía sin ficha (créala en el biombo)";
+        return `<div class="linea${c.conFicha ? "" : " sin-ficha"}">
           <span class="punto" style="background:${c.color ?? COLOR_PJ}"></span>
-          <span class="t"><b>${esc(c.nombre)}</b> <small>· ${esc(c.jugador ?? "")} · ${c.pg}/${c.pgMax} PG · CA ${c.ca} · inic. ${signo(c.mod || 0)}${c.conFicha ? "" : " · sin ficha"}</small></span>
-        </label>`).join("")}</div>` : `<p class="ayuda">${leyendo ? "Leyendo las fichas…" : "No hay jugadores activos."}</p>`}
+          <span class="t"><b>${esc(c.nombre)}</b>${c.jugador && c.jugador !== c.nombre ? ` <small>(${esc(c.jugador)})</small>` : ""}<br><small>${datos}</small></span>
+          ${dentro
+            ? `<span class="en-mesa">En la mesa</span><button class="icono" data-a="alternarPJ" data-id="${c.id}" title="Sacar de la mesa">✕</button>`
+            : `<button class="boton peq${c.conFicha ? " prim" : ""}" data-a="alternarPJ" data-id="${c.id}">Añadir a la mesa</button>`}
+        </div>`;
+      }).join("")}</div>` : `<p class="ayuda">${leyendo ? "Leyendo las fichas…" : "No hay jugadores activos."}</p>`}
       <div class="fila-botones">
-        <button class="boton" data-a="leerFichas" ${leyendo ? "disabled" : ""}>${leyendo ? "Leyendo…" : "↻ Volver a leer las fichas"}</button>
-        <button class="boton" data-a="apuntarPG" title="Escribe los PG actuales de la mesa en cada ficha">Apuntar PG en las fichas</button>
+        ${fuera.length > 1 ? `<button class="boton prim" data-a="anadirTodos">Añadir a todos (${fuera.length})</button>` : ""}
+        <button class="boton" data-a="leerFichas" ${leyendo ? "disabled" : ""}>${leyendo ? "Leyendo…" : "↻ Releer las fichas"}</button>
+      </div>
+      <p class="ayuda">Se releen solas cada vez que abres esta pestaña. Última lectura: ${esc(cuando)}. PG máx., CA, iniciativa, Con, salvaciones, DMC y Percepción salen siempre de la ficha; los PG actuales también, salvo en mitad de un combate, que los llevas tú aquí.</p>
+    </div>
+    <div class="seccion"><span class="etiqueta">Después del combate</span>
+      <div class="fila-botones">
+        <button class="boton" data-a="apuntarPG" title="Escribe en cada ficha los PG actuales de la mesa">Apuntar PG en las fichas</button>
         <button class="boton" data-a="curarGrupo" title="Tras un descanso largo">Curar a todos</button>
       </div>
-      <p class="ayuda">Última lectura: ${esc(cuando)}. PG máx., CA, iniciativa, Con, salvaciones, DMC y Percepción salen siempre de la ficha. Los PG actuales también, salvo en mitad de un combate, que los lleva la mesa. Las fichas solo cambian cuando pulsas «Apuntar PG en las fichas» (también te lo ofrece al terminar el combate).</p>
+      <p class="ayuda">Las fichas solo cambian cuando pulsas «Apuntar PG en las fichas» (también te lo ofrece al terminar el combate).</p>
     </div>`;
   }
 
@@ -1050,7 +935,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   const ACC: Record<string, (b: Boton) => void> = {
     siguiente: () => siguiente(),
     empezar: () => empezar(),
-    tirarIni: () => cambiar(tirarIniciativas),
     ordenar: () => cambiar(ordenar),
     terminar: () => {
       if (!confirm("¿Terminar el combate? Se quitan los enemigos; los PJ se quedan con sus PG.")) return;
@@ -1059,7 +943,11 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       if (conFicha && confirm("¿Apunto en las fichas los PG con que acaban los PJ?")) void apuntarPGs();
     },
     deshacer: () => deshacer(),
-    pestana: (b) => { pestana = b.dataset.p ?? "acciones"; render(); },
+    pestana: (b) => {
+      pestana = b.dataset.p ?? "acciones";
+      render();
+      if (pestana === "grupo") void leerFichas(false); // fichas recién creadas o cambiadas en el biombo
+    },
     subir: (b) => cambiar(() => mover(id(b), -1)),
     bajar: (b) => cambiar(() => mover(id(b), 1)),
     editar: (b) => editar(id(b)),
@@ -1085,11 +973,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         if (x) x.rondas = v != null && v > 0 ? v : null;
       });
     },
-    dporc: () => {
-      const t = d(100);
-      avisos.push({ t: `d% = <b>${t}</b> → ${t <= 25 ? "actúa con normalidad" : t <= 50 ? "solo balbucea" : t <= 75 ? "se hace daño con lo que lleve" : "ataca a lo más cercano"}`, k: "", html: true });
-      render();
-    },
     deseleccionar: () => { sel.clear(); render(); },
     selEnemigos: () => {
       sel = new Set(S.orden.filter((x) => { const c = C(x)!; return !c.pj && !c.aliado && !estadoPG(c)?.fuera; }));
@@ -1110,15 +993,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       raiz.querySelector<HTMLInputElement>('[data-foco="en-n"]')?.select();
     },
     olvidarBloque: () => { bloque = null; render(); },
-    atacar: (b) => atacar(id(b), (b.dataset.i ?? "").split(",").map(Number)),
-    verAtaques: (b) => { atacante = id(b); render(); },
-    cerrarAtaques: () => { atacante = null; render(); },
-    aplicarAtaque: (b) => {
-      const c = C(id(b));
-      const x = Number(b.dataset.n);
-      if (!c || !x) return;
-      cambiar(() => { avisos = []; danar(c, x); });
-    },
     plantilla: (b) => {
       const p = S.plantillas[Number(b.dataset.i)];
       if (!p) return;
@@ -1133,6 +1007,11 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       if (p && confirm(`¿Borrar «${p.nombre}» del bestiario?`)) cambiar(() => { S.plantillas.splice(i, 1); });
     },
     alternarPJ: (b) => alternarPJ(id(b)),
+    anadirTodos: () => {
+      const ids = Object.values(S.criaturas).filter((c) => c.pj && c.conFicha && !S.orden.includes(c.id)).map((c) => c.id);
+      if (S.activo) { for (const x of ids) alternarPJ(x); return; } // con el combate empezado pide la iniciativa de cada uno
+      cambiar(() => { for (const x of ids) { C(x)!.ini = null; S.orden.push(x); } log(`Entran en la mesa: ${ids.map((x) => C(x)!.nombre).join(", ")}.`); });
+    },
     leerFichas: () => void leerFichas(true),
     apuntarPG: () => { if (confirm("¿Escribir en cada ficha los PG actuales que tiene la mesa?")) void apuntarPGs(); },
     curarGrupo: () => {
@@ -1190,7 +1069,6 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     const t = ev.target as HTMLInputElement;
     if (t.dataset?.b) {
       B[t.dataset.b] = t.type === "checkbox" ? t.checked : t.value;
-      if (t.dataset.b === "sv-tipo") render(); // cambia el texto del botón de daño
       if (t.dataset.b === "ef-nombre") { // efectos conocidos: tipo y nota
         const p = PRESETS.find(([n]) => n.toLowerCase() === t.value.trim().toLowerCase());
         if (p) { B["ef-tipo"] = p[1]; if (!B["ef-nota"]) B["ef-nota"] = p[2]; render(); }
@@ -1199,7 +1077,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     if (t.dataset?.campo === "ini") {
       const c = C(t.dataset.id);
       const v = entero(t.value, null);
-      if (c && v !== c.ini) cambiar(() => { c.ini = v; log(`Iniciativa de ${c.nombre}: ${v ?? "—"}.`); });
+      if (c && v !== c.ini) cambiar(() => ponerIniciativa(c, v));
     }
   };
   // Teclas dentro de la mesa (campos).
@@ -1248,6 +1126,12 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       alert("Ese fichero no es una copia de esta mesa de combate.");
     }
   };
+  // Al volver a la ventana (p. ej. tras tocar una ficha en el biombo), releer.
+  const alVolver = () => {
+    if (document.visibilityState !== "visible") return;
+    if (S.leidas && Date.now() - Date.parse(S.leidas) < 30_000) return;
+    void leerFichas(false);
+  };
   // Otra pestaña con la mesa abierta: coger sus cambios.
   const alAlmacen = (ev: StorageEvent) => {
     if (ev.key === CLAVE && ev.newValue) { S = { ...nueva(), ...JSON.parse(ev.newValue) }; render(); }
@@ -1259,6 +1143,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   raiz.addEventListener("keydown", alTeclaDentro);
   document.addEventListener("keydown", alTecla);
   window.addEventListener("storage", alAlmacen);
+  document.addEventListener("visibilitychange", alVolver);
   fichero.addEventListener("change", alFichero);
 
   render();
@@ -1268,6 +1153,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     vivo = false;
     document.removeEventListener("keydown", alTecla);
     window.removeEventListener("storage", alAlmacen);
+    document.removeEventListener("visibilitychange", alVolver);
     raiz.removeEventListener("click", alClic);
     raiz.removeEventListener("input", alEscribir);
     raiz.removeEventListener("change", alCambiar);

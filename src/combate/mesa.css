@@ -232,3 +232,5 @@ label.linea { cursor: pointer; }
 .fila-ataques { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .fila-ataques .etiqueta { min-width: 120px; }
 .recordatorio .boton { vertical-align: middle; }
+.linea.sin-ficha { opacity: 0.7; }
+.en-mesa { font: 600 10px var(--titulo); letter-spacing: 0.08em; text-transform: uppercase; color: var(--musgo); }

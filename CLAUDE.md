@@ -59,6 +59,8 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
 - **Mesa de combate (`/master/combate`):**
   - Es una isla imperativa (`src/combate/mesa.ts`) montada en un Shadow DOM: sus estilos no se mezclan con los de la app. Pinta con plantillas de texto; escapa todo con `esc()`.
   - Su estado vive en el `localStorage` del portátil (`roleros:mesa-combate`), no en Supabase.
+  - **No tira dados.** Dan tira con dados físicos en la mesa: la mesa solo apunta (iniciativas, daño, estados, efectos y sus rondas). Nada de botones de tirar ataques, salvaciones ni iniciativas.
+  - Los PJ se añaden a la mesa a mano desde la pestaña Grupo, que relee las fichas cada vez que se abre.
   - Los PJ salen de las fichas (`pjsParaCombate`). PG máx., CA, iniciativa, salvaciones, etc. mandan siempre las fichas; los PG actuales solo fuera de combate.
   - Solo escribe en las fichas cuando el máster lo pide, y solo `pg.actual`, con `poner_pg` (nunca un `guardarFicha` desde la mesa).
 - **Ficha = JSON libre, sin motor de reglas de PF1e.** Se edita con formulario, nunca en JSON.
