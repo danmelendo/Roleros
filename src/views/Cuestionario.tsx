@@ -6,7 +6,8 @@ import { nubeConfigurada } from "../lib/supabase";
 
 function PreguntaCard({ jugadorId, p, guardada }: { jugadorId: string; p: Pregunta; guardada?: string }) {
   const qc = useQueryClient();
-  const [texto, setTexto] = useState(guardada ?? "");
+  // La caja es solo para texto libre: si la respuesta guardada es una opción, empieza vacía.
+  const [texto, setTexto] = useState(guardada && !p.opciones.includes(guardada) ? guardada : "");
   const enviar = useMutation({
     mutationFn: (r: string) => enviarRespuesta(jugadorId, p.id, r),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["respuestas", jugadorId] }),
@@ -24,7 +25,7 @@ function PreguntaCard({ jugadorId, p, guardada }: { jugadorId: string; p: Pregun
               className={`boton opcion ${guardada === o ? "elegida" : ""}`}
               disabled={enviar.isPending}
               onClick={() => {
-                setTexto(o);
+                setTexto("");
                 enviar.mutate(o);
               }}
             >
@@ -68,6 +69,8 @@ export function Cuestionario() {
     enabled: nubeConfigurada,
   });
   const porPregunta = new Map(respuestas.data?.map((r) => [r.pregunta_id, r.respuesta]));
+  const total = preguntas.data?.length ?? 0;
+  const hechas = preguntas.data?.filter((p) => porPregunta.has(p.id)).length ?? 0;
 
   return (
     <main className="pantalla">
@@ -75,6 +78,12 @@ export function Cuestionario() {
         <Link to="/j/$jugadorId" params={{ jugadorId }} className="enlace-tenue">← Volver</Link>
         <h1>Cuestionario</h1>
         <p className="sub">No hay respuestas buenas ni malas. Responde como lo harías tú.</p>
+        {total > 0 && respuestas.isSuccess && (
+          <p className="progreso">
+            {hechas} de {total} respondidas
+            <span className="barra"><span style={{ width: `${(hechas / total) * 100}%` }} /></span>
+          </p>
+        )}
       </header>
       {preguntas.isLoading && <p className="tenue">Cargando…</p>}
       {preguntas.data?.length === 0 && <p className="tenue">Todavía no hay preguntas.</p>}
@@ -82,6 +91,12 @@ export function Cuestionario() {
         preguntas.data?.map((p) => (
           <PreguntaCard key={p.id} jugadorId={jugadorId} p={p} guardada={porPregunta.get(p.id)} />
         ))}
+      {total > 0 && hechas === total && (
+        <section className="tarjeta final">
+          <h2>¡Listo!</h2>
+          <p className="tenue">El máster ya tiene tus respuestas. Puedes cambiar cualquiera hasta que empiece la partida.</p>
+        </section>
+      )}
     </main>
   );
 }

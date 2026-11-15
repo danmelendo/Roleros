@@ -75,6 +75,11 @@ code { font-family: var(--mono); font-size: 0.85em; }
 .cifra { font-family: var(--mono); font-size: 1.05rem; }
 .hueco { color: var(--tenue); font-style: italic; font-family: var(--serif); margin: 0; }
 
+.progreso { margin: 12px 0 0; font-size: 0.85rem; color: var(--tenue); }
+.barra { display: block; height: 4px; margin-top: 6px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.barra > span { display: block; height: 100%; background: var(--oro); transition: width 300ms ease-out; }
+.tarjeta.final { border-color: var(--oro); text-align: center; }
+
 .rutas { list-style: none; margin: 0; padding: 0; }
 .rutas li { padding: 4px 0; }
 .rutas label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
