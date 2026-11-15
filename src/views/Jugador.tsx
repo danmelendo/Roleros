@@ -51,6 +51,14 @@ export function JugadorLayout() {
   }, [dentro, sabido, completo, enCuestionario, jugadorId, navigate]);
 
   const yo = jugadores.data?.find((j) => j.id === jugadorId);
+  // Jugador dado de baja (o id que ya no existe): a la portada a elegir otra vez.
+  const desconocido = jugadores.isSuccess && !yo;
+  useEffect(() => {
+    if (desconocido && dentro) {
+      guardarJugador(null);
+      navigate({ to: "/", replace: true });
+    }
+  }, [desconocido, dentro, navigate]);
   const nombre = typeof ficha.data?.nombre === "string" && ficha.data.nombre ? ficha.data.nombre : null;
   const enAcciones = pathname.endsWith("/acciones");
   const vistas = accionesVistas(jugadorId);

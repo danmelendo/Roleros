@@ -5,6 +5,7 @@ import {
   anadirItem,
   asignarFicha,
   cambiarItem,
+  cambiarJugador,
   fichaCompleta,
   guardarFicha,
   inventarioDe,
@@ -25,6 +26,7 @@ import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { Ojo } from "../components/Ojo";
 import { Retrato } from "../components/Retrato";
+import { Colores } from "../components/Colores";
 
 /* ------------------------------------------------------------ utilidades -- */
 
@@ -178,6 +180,8 @@ function Editor({
           {nueva ? "Ficha nueva: rellénala y guarda." : `${numVisibles} ${numVisibles === 1 ? "campo revelado" : "campos revelados"}. El ojo dorado es lo que ve el jugador.`}
         </p>
       </header>
+
+      <DatosJugador jugadorId={jugadorId} />
 
       <details className="pagina plegable">
         <summary>
@@ -380,6 +384,57 @@ function Editor({
         </div>
       </div>
     </main>
+  );
+}
+
+/* ------------------------------------------------- datos del jugador ---- */
+/* Nombre, color y baja. La baja no borra nada: el jugador desaparece de la
+   portada y las funciones del jugador le rechazan (todas miran `activo`). */
+
+function DatosJugador({ jugadorId }: { jugadorId: string }) {
+  const qc = useQueryClient();
+  const jugadores = useQuery({ queryKey: ["jugadores"], queryFn: listarJugadores });
+  const j = jugadores.data?.find((x) => x.id === jugadorId);
+  const [nombre, setNombre] = useState("");
+  const [color, setColor] = useState("");
+  useEffect(() => {
+    if (j) { setNombre(j.nombre); setColor(j.color ?? ""); }
+  }, [j?.nombre, j?.color]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cambiar = useMutation({
+    mutationFn: (c: Parameters<typeof cambiarJugador>[1]) => cambiarJugador(jugadorId, c),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["jugadores"] }),
+  });
+  if (!j) return null;
+  const tocado = nombre.trim() !== j.nombre || color !== (j.color ?? "");
+
+  return (
+    <details className="pagina plegable" open={!j.activo}>
+      <summary>
+        <h2>Jugador</h2>
+        <span className="tenue">{j.activo ? "de alta" : "de baja"}</span>
+      </summary>
+      <div className="nuevo-jugador">
+        <input className="campo" aria-label="Nombre del jugador" maxLength={40} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <Colores valor={color} onCambio={setColor} />
+        <div className="fila-botones">
+          <button className="boton chico" disabled={!tocado || !nombre.trim() || cambiar.isPending} onClick={() => cambiar.mutate({ nombre: nombre.trim(), color })}>
+            Guardar
+          </button>
+          <button
+            className="boton chico secundario derecha"
+            disabled={cambiar.isPending}
+            onClick={() => {
+              if (j.activo && !confirm(`¿Dar de baja a ${j.nombre}? Dejará de aparecer en la app. Sus datos se guardan y puedes darle de alta otra vez.`)) return;
+              cambiar.mutate({ activo: !j.activo });
+            }}
+          >
+            {j.activo ? "Dar de baja" : "Dar de alta otra vez"}
+          </button>
+        </div>
+        {cambiar.error && <p className="error">{cambiar.error.message}</p>}
+      </div>
+    </details>
   );
 }
 

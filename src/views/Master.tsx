@@ -6,6 +6,7 @@ import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { supabase } from "../lib/supabase";
 import { Retrato } from "../components/Retrato";
+import { Colores, COLORES } from "../components/Colores";
 
 /* Supabase Auth exige correo. El máster entra con un nombre corto ("Dan")
    que se traduce a <nombre>@roleros.local; un correo completo también vale. */
@@ -82,7 +83,7 @@ export function Master() {
           </Link>
 
           <div className="lista">
-            {jugadores.data?.map((j) => {
+            {jugadores.data?.filter((j) => j.activo).map((j) => {
               const r = resumen.data?.[j.id];
               const pj = r?.nombre ? `${r.nombre}${r.clase ? `, ${r.clase}` : ""}${r.nivel ? ` ${r.nivel}` : ""}` : "Sin ficha";
               const estado = r?.asignada === undefined ? "" : r.asignada ? " · asignada" : " · sin asignar";
@@ -105,13 +106,27 @@ export function Master() {
           </div>
 
           {jugadores.data && <NuevoJugador existentes={jugadores.data} />}
+
+          {!!jugadores.data?.some((j) => !j.activo) && (
+            <details className="pagina plegable">
+              <summary>
+                <h2>De baja</h2>
+                <span className="tenue">{jugadores.data.filter((j) => !j.activo).length}</span>
+              </summary>
+              <p className="nota">No aparecen en la portada ni pueden usar la app. Sus datos se conservan: entra para darles de alta otra vez.</p>
+              {jugadores.data.filter((j) => !j.activo).map((j) => (
+                <p key={j.id} className="fila">
+                  <span>{j.nombre}</span>
+                  <Link to="/master/$jugadorId" params={{ jugadorId: j.id }} className="boton chico secundario">Abrir</Link>
+                </p>
+              ))}
+            </details>
+          )}
         </>
       )}
     </main>
   );
 }
-
-const COLORES = ["#C9A227", "#7FB3A8", "#B5728C", "#8C6BB1", "#6E9F4E", "#C46A3A", "#4F7DB5", "#A8A08A"];
 
 function NuevoJugador({ existentes }: { existentes: Jugador[] }) {
   const qc = useQueryClient();
@@ -143,20 +158,7 @@ function NuevoJugador({ existentes }: { existentes: Jugador[] }) {
         }}
       >
         <input className="campo" placeholder="Nombre del jugador" maxLength={40} value={nombre} onChange={(e) => setNombre(e.target.value)} />
-        <div className="chips" role="radiogroup" aria-label="Color">
-          {COLORES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              role="radio"
-              aria-checked={color === c}
-              aria-label={`Color ${c}`}
-              className={`muestra ${color === c ? "activo" : ""}`}
-              style={{ background: c }}
-              onClick={() => setColor(c)}
-            />
-          ))}
-        </div>
+        <Colores valor={color} onCambio={setColor} />
         <button className="boton" disabled={!nombre.trim() || crear.isPending}>{crear.isPending ? "Añadiendo…" : "Añadir"}</button>
         {crear.error && <p className="error">{crear.error.message}</p>}
         {hecho && <p className="ok">{hecho} ya puede elegirse en la portada. Empezará por el cuestionario.</p>}

@@ -138,6 +138,11 @@ export async function crearJugador(nombre: string, color: string, existentes: Ju
   return ok(await supabase.from("jugadores").insert({ id, nombre: nombre.trim(), color, orden }).select().single());
 }
 
+/** Nombre, color o baja (activo = false). El id no se toca nunca. */
+export async function cambiarJugador(id: string, cambios: Partial<Pick<Jugador, "nombre" | "color" | "activo">>): Promise<void> {
+  ok(await supabase.from("jugadores").update(cambios).eq("id", id));
+}
+
 export async function esMaster(): Promise<boolean> {
   return ok(await supabase.rpc("es_master")) === true;
 }
