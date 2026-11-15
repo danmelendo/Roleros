@@ -102,6 +102,20 @@ export async function accionesRespondidas(): Promise<AccionMaster[]> {
   return ok(await supabase.from("acciones_offrol").select("*").neq("estado", "pendiente").order("resuelta_at", { ascending: false }).limit(30));
 }
 
+/** Borra acciones ya respondidas (nunca las pendientes). Con fecha, solo las respondidas antes de ella.
+    No deshace nada: el oro y los objetos que se dieron al resolverlas se quedan. Devuelve cuántas borró. */
+export async function borrarRespondidas(antesDe?: Date): Promise<number> {
+  let q = supabase.from("acciones_offrol").delete({ count: "exact" }).neq("estado", "pendiente");
+  if (antesDe) q = q.lt("resuelta_at", antesDe.toISOString());
+  const { error, count } = await q;
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function borrarAccion(id: number): Promise<void> {
+  ok(await supabase.from("acciones_offrol").delete().eq("id", id).neq("estado", "pendiente"));
+}
+
 export async function resolverAccion(
   id: number, estado: "resuelta" | "rechazada", respuesta: string, oro: number, objetos: ObjetoDado[],
 ): Promise<void> {

@@ -353,6 +353,10 @@ form.pagina > .boton { align-self: flex-start; }
 .sello.resuelta { color: var(--musgo); }
 .sello.rechazada { color: var(--rubrica); }
 .entradas .sello { margin-left: 8px; }
+.entradas .quitar { float: right; }
+.limpiar { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--borde); }
+.limpiar .fila { flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
+.limpiar .nota { margin: 4px 0 0; }
 .respuesta-dm {
   margin: 8px 0 0;
   padding: 6px 10px;

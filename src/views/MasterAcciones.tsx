@@ -4,6 +4,8 @@ import { Link, Navigate } from "@tanstack/react-router";
 import {
   accionesPendientes,
   accionesRespondidas,
+  borrarAccion,
+  borrarRespondidas,
   listarJugadores,
   resolverAccion,
   type AccionMaster,
@@ -80,6 +82,52 @@ function Responder({ a, jugador }: { a: AccionMaster; jugador?: Jugador }) {
   );
 }
 
+/* Limpieza del registro: las respondidas se acumulan sesión tras sesión.
+   Borrarlas no deshace el oro ni los objetos; el jugador deja de verlas en su historial. */
+function Limpiar({ total }: { total: number }) {
+  const qc = useQueryClient();
+  const [hecho, setHecho] = useState<string | null>(null);
+  const limpiar = useMutation({
+    mutationFn: (dias: number | null) => borrarRespondidas(dias === null ? undefined : new Date(Date.now() - dias * 86_400_000)),
+    onSuccess: (n) => {
+      setHecho(n === 0 ? "No había ninguna que borrar." : `${n} ${n === 1 ? "borrada" : "borradas"}.`);
+      refrescar(qc);
+    },
+  });
+  const pedir = (dias: number | null, que: string) => {
+    if (window.confirm(`¿Borrar ${que}? Los jugadores dejarán de verlas en su historial. El oro y los objetos que diste se quedan.`)) {
+      setHecho(null);
+      limpiar.mutate(dias);
+    }
+  };
+  return (
+    <div className="limpiar">
+      <span className="etiqueta">Limpiar el registro</span>
+      <div className="fila">
+        <button type="button" className="boton chico secundario" disabled={limpiar.isPending} onClick={() => pedir(7, "las respondidas hace más de una semana")}>
+          Más de una semana
+        </button>
+        <button type="button" className="boton chico secundario" disabled={limpiar.isPending || total === 0} onClick={() => pedir(null, "todas las respondidas")}>
+          Todas las respondidas
+        </button>
+      </div>
+      <p className="nota">Las pendientes no se tocan nunca.</p>
+      {hecho && <p className="nota">{hecho}</p>}
+      {limpiar.error && <p className="error">{limpiar.error.message}</p>}
+    </div>
+  );
+}
+
+function BorrarUna({ a }: { a: AccionMaster }) {
+  const qc = useQueryClient();
+  const borrar = useMutation({ mutationFn: () => borrarAccion(a.id), onSuccess: () => refrescar(qc) });
+  return (
+    <button type="button" className="quitar" title="Borrar del registro" disabled={borrar.isPending} onClick={() => borrar.mutate()}>
+      ×
+    </button>
+  );
+}
+
 export function MasterAcciones() {
   const { sesion, esMaster, comprobando } = useSesion();
   const jugadores = useQuery({ queryKey: ["jugadores"], queryFn: listarJugadores, enabled: esMaster });
@@ -112,22 +160,25 @@ export function MasterAcciones() {
         </div>
       ))}
 
-      {!!respondidas.data?.length && (
+      {respondidas.isSuccess && (
         <details className="pagina plegable">
           <summary>
             <h2>Respondidas</h2>
-            <span className="tenue">{respondidas.data.length}</span>
+            <span className="tenue">{respondidas.data.length === 30 ? "30 últimas" : respondidas.data.length}</span>
           </summary>
+          {respondidas.data.length === 0 && <p className="tenue">El registro está limpio.</p>}
           <ul className="entradas">
             {respondidas.data.map((a) => (
               <li key={a.id}>
                 <span className="entrada-nombre">{deJugador(a.jugador_id)?.nombre}</span>
                 <span className={`sello ${a.estado}`}>{a.estado === "resuelta" ? "Resuelta" : "Rechazada"}</span>
+                <BorrarUna a={a} />
                 <p className="entrada-texto">{a.texto}</p>
                 {a.respuesta_dm && <p className="entrada-texto">— {a.respuesta_dm}</p>}
               </li>
             ))}
           </ul>
+          <Limpiar total={respondidas.data.length} />
         </details>
       )}
     </main>
