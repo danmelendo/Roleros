@@ -47,6 +47,7 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - Las tablas privadas no tienen políticas para `anon`.
   - El jugador lee por RPC (`get_ficha_revelada`, `get_mi_petate`, `get_mis_acciones`, `get_mis_respuestas`, `get_mi_diario`, `get_retrato`).
   - No añadas `select` a `fichas`, `inventario`, `acciones_offrol`, `diario` ni `retratos` en código del jugador.
+- **Jugadores:** el máster los da de alta desde el biombo (`crearJugador`). El id es un slug del nombre (`maria-jose`) y no se cambia nunca: todas las tablas cuelgan de él.
 - **Primero el cuestionario:** mientras el jugador no haya respondido todas las preguntas activas, `JugadorLayout` solo enseña el cuestionario (sin pestañas ni retrato) y redirige ahí cualquier otra ruta. Ojo: añadir una pregunta nueva vuelve a cerrar la app a quien no la haya respondido.
 - **La ficha tiene puerta:** `get_ficha_revelada` devuelve `null` mientras el jugador no haya respondido todas las preguntas activas o la ficha no tenga `asignada = true` (el tick del biombo). El cliente solo decide qué mensaje de espera enseña; la puerta es del servidor.
 - **Escrituras de `anon` solo por funciones `security definer` que validan lo que reciben:** `enviar_respuesta`, `crear_accion` (máximo 10 pendientes), `retirar_accion` (solo si está pendiente), `escribir_diario` / `borrar_diario` (máximo 300 entradas) y `poner_retrato` (data URL de imagen, ≤ 400 KB). Ninguna política de `insert` para `anon`.

@@ -128,6 +128,16 @@ export async function ponerOro(jugadorId: string, oro: number): Promise<void> {
   ok(await supabase.from("jugadores").update({ oro }).eq("id", jugadorId));
 }
 
+/** El id es un slug del nombre ("María José" → "maria-jose"), único. */
+export async function crearJugador(nombre: string, color: string, existentes: Jugador[]): Promise<Jugador> {
+  const base = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "jugador";
+  const ids = new Set(existentes.map((j) => j.id));
+  let id = base;
+  for (let n = 2; ids.has(id); n++) id = `${base}-${n}`;
+  const orden = Math.max(0, ...existentes.map((j) => j.orden)) + 1;
+  return ok(await supabase.from("jugadores").insert({ id, nombre: nombre.trim(), color, orden }).select().single());
+}
+
 export async function esMaster(): Promise<boolean> {
   return ok(await supabase.rpc("es_master")) === true;
 }

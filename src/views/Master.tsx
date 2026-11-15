@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { listarJugadores, listarPreguntas, resumenMaster } from "../lib/api";
+import { crearJugador, listarJugadores, listarPreguntas, resumenMaster, type Jugador } from "../lib/api";
 import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { supabase } from "../lib/supabase";
@@ -103,8 +103,64 @@ export function Master() {
               );
             })}
           </div>
+
+          {jugadores.data && <NuevoJugador existentes={jugadores.data} />}
         </>
       )}
     </main>
+  );
+}
+
+const COLORES = ["#C9A227", "#7FB3A8", "#B5728C", "#8C6BB1", "#6E9F4E", "#C46A3A", "#4F7DB5", "#A8A08A"];
+
+function NuevoJugador({ existentes }: { existentes: Jugador[] }) {
+  const qc = useQueryClient();
+  const libre = COLORES.find((c) => !existentes.some((j) => j.color?.toLowerCase() === c.toLowerCase())) ?? COLORES[0];
+  const [nombre, setNombre] = useState("");
+  const [color, setColor] = useState(libre);
+  const [hecho, setHecho] = useState<string | null>(null);
+  const crear = useMutation({
+    mutationFn: () => crearJugador(nombre, color, existentes),
+    onSuccess: (j) => {
+      setHecho(j.nombre);
+      setNombre("");
+      qc.invalidateQueries({ queryKey: ["jugadores"] });
+    },
+  });
+  useEffect(() => setColor(libre), [libre]);
+
+  return (
+    <details className="pagina plegable">
+      <summary>
+        <h2>Añadir jugador</h2>
+      </summary>
+      <form
+        className="nuevo-jugador"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setHecho(null);
+          if (nombre.trim()) crear.mutate();
+        }}
+      >
+        <input className="campo" placeholder="Nombre del jugador" maxLength={40} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <div className="chips" role="radiogroup" aria-label="Color">
+          {COLORES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={color === c}
+              aria-label={`Color ${c}`}
+              className={`muestra ${color === c ? "activo" : ""}`}
+              style={{ background: c }}
+              onClick={() => setColor(c)}
+            />
+          ))}
+        </div>
+        <button className="boton" disabled={!nombre.trim() || crear.isPending}>{crear.isPending ? "Añadiendo…" : "Añadir"}</button>
+        {crear.error && <p className="error">{crear.error.message}</p>}
+        {hecho && <p className="ok">{hecho} ya puede elegirse en la portada. Empezará por el cuestionario.</p>}
+      </form>
+    </details>
   );
 }
