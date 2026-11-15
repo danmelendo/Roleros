@@ -69,7 +69,7 @@ export const ESQUEMA: Seccion[] = [
   { tipo: "lista", clave: "rasgos", titulo: "Rasgos de clase", singular: "rasgo" },
   { tipo: "lista", clave: "dotes", titulo: "Dotes", singular: "dote" },
   { tipo: "lista", clave: "conjuros", titulo: "Magia", singular: "conjuro" },
-  { tipo: "lista", clave: "equipo", titulo: "Equipo", singular: "objeto" },
+  // Los objetos NO van aquí: viven en el petate (tabla inventario), con su oro.
   { tipo: "texto", clave: "trasfondo", titulo: "Trasfondo" },
 ];
 
@@ -88,7 +88,6 @@ export const PLANTILLA: FichaDatos = {
   rasgos: {},
   dotes: {},
   conjuros: {},
-  equipo: {},
   trasfondo: "",
 };
 

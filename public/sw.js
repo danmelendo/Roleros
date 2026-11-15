@@ -1,7 +1,7 @@
 /* Roleros · service worker (solo la web; en el APK no se registra).
    Que la app abra sin cobertura. A Supabase NUNCA se le cachea nada:
    verías una ficha vieja después de que el máster revele algo. */
-const VERSION = "roleros-v1";
+const VERSION = "roleros-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -24,7 +24,9 @@ self.addEventListener("fetch", (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(VERSION);
       try {
-        const red = await fetch(req);
+        // no-cache: revalida con el servidor. Sin esto la caché HTTP (GitHub Pages
+        // manda max-age=600) servía un index.html viejo que apuntaba al JS anterior.
+        const red = await fetch(req.url, { cache: "no-cache", credentials: "same-origin" });
         cache.put(req, red.clone());
         return red;
       } catch {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { listarJugadores, listarPreguntas, resumenMaster } from "../lib/api";
+import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { supabase } from "../lib/supabase";
 
@@ -43,7 +44,8 @@ export function Master() {
   const { sesion, esMaster, comprobando } = useSesion();
   const qc = useQueryClient();
   const jugadores = useQuery({ queryKey: ["jugadores"], queryFn: listarJugadores, enabled: esMaster });
-  const resumen = useQuery({ queryKey: ["resumen-master"], queryFn: resumenMaster, enabled: esMaster });
+  const resumen = useQuery({ queryKey: ["resumen-master"], queryFn: resumenMaster, enabled: esMaster, refetchInterval: 60_000 });
+  const pendientes = Object.values(resumen.data ?? {}).reduce((n, r) => n + r.pendientes, 0);
   const preguntas = useQuery({ queryKey: ["preguntas"], queryFn: listarPreguntas, enabled: esMaster });
 
   return (
@@ -67,21 +69,36 @@ export function Master() {
       )}
 
       {esMaster && (
-        <div className="lista">
-          {jugadores.data?.map((j) => {
-            const r = resumen.data?.[j.id];
-            const pj = r?.nombre ? `${r.nombre}${r.clase ? `, ${r.clase}` : ""}${r.nivel ? ` ${r.nivel}` : ""}` : "Sin ficha";
-            return (
-              <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="pagina jugador" style={{ borderLeftColor: j.color ?? undefined }}>
-                <span className="jugador-nombre">{j.nombre}</span>
-                <span className="jugador-pj">{pj}</span>
-                <span className="jugador-meta">
-                  Cuestionario: {r?.respuestas ?? 0} de {preguntas.data?.length ?? "…"}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        <>
+          <Link to="/master/acciones" className={`pagina contador ${pendientes ? "hay" : ""}`}>
+            <span className="contador-num">{pendientes}</span>
+            <span>
+              <span className="jugador-nombre">Entre sesiones</span>
+              <span className="jugador-meta">
+                {pendientes === 0 ? "Nada por responder" : pendientes === 1 ? "1 acción por responder" : `${pendientes} acciones por responder`}
+              </span>
+            </span>
+          </Link>
+
+          <div className="lista">
+            {jugadores.data?.map((j) => {
+              const r = resumen.data?.[j.id];
+              const pj = r?.nombre ? `${r.nombre}${r.clase ? `, ${r.clase}` : ""}${r.nivel ? ` ${r.nivel}` : ""}` : "Sin ficha";
+              return (
+                <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="pagina jugador" style={{ borderLeftColor: j.color ?? undefined }}>
+                  <span className="fila">
+                    <span className="jugador-nombre">{j.nombre}</span>
+                    {!!r?.pendientes && <span className="globo" title="Acciones por responder">{r.pendientes}</span>}
+                  </span>
+                  <span className="jugador-pj">{pj}</span>
+                  <span className="jugador-meta">
+                    {oro(j.oro)} · Cuestionario {r?.respuestas ?? 0}/{preguntas.data?.length ?? "…"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </>
       )}
     </main>
   );

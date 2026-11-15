@@ -1,8 +1,12 @@
 import { createHashHistory, createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
 import { Inicio } from "./views/Inicio";
+import { JugadorLayout } from "./views/Jugador";
 import { Ficha } from "./views/Ficha";
+import { Petate } from "./views/Petate";
+import { Acciones } from "./views/Acciones";
 import { Cuestionario } from "./views/Cuestionario";
 import { Master } from "./views/Master";
+import { MasterAcciones } from "./views/MasterAcciones";
 import { MasterJugador } from "./views/MasterJugador";
 import { nubeConfigurada } from "./lib/supabase";
 
@@ -19,15 +23,25 @@ function Layout() {
 
 const raiz = createRootRoute({ component: Layout });
 
+// Jugador: cabecera y pestañas comunes (JugadorLayout) y cada sección dentro.
+const jugador = createRoute({ getParentRoute: () => raiz, path: "/j/$jugadorId", component: JugadorLayout });
+const deJugador = [
+  createRoute({ getParentRoute: () => jugador, path: "/", component: Ficha }),
+  createRoute({ getParentRoute: () => jugador, path: "petate", component: Petate }),
+  createRoute({ getParentRoute: () => jugador, path: "acciones", component: Acciones }),
+  createRoute({ getParentRoute: () => jugador, path: "cuestionario", component: Cuestionario }),
+];
+
 const rutas = [
   createRoute({ getParentRoute: () => raiz, path: "/", component: Inicio }),
-  createRoute({ getParentRoute: () => raiz, path: "/j/$jugadorId", component: Ficha }),
-  createRoute({ getParentRoute: () => raiz, path: "/j/$jugadorId/cuestionario", component: Cuestionario }),
+  jugador.addChildren(deJugador),
   createRoute({ getParentRoute: () => raiz, path: "/master", component: Master }),
+  // Estática: gana a /master/$jugadorId.
+  createRoute({ getParentRoute: () => raiz, path: "/master/acciones", component: MasterAcciones }),
   createRoute({ getParentRoute: () => raiz, path: "/master/$jugadorId", component: MasterJugador }),
 ];
 
-/* Hash (#/ruta): funciona igual en file:// (APK) y en GitHub Pages (/Roleros/). */
+/* Hash (#/ruta): funciona igual en GitHub Pages (/Roleros/) sin reescrituras del servidor. */
 export const router = createRouter({
   routeTree: raiz.addChildren(rutas),
   history: createHashHistory(),

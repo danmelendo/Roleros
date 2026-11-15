@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { enviarRespuesta, listarPreguntas, misRespuestas, type Pregunta } from "../lib/api";
 import { nubeConfigurada } from "../lib/supabase";
 
@@ -61,7 +61,7 @@ function PreguntaCard({ jugadorId, p, guardada }: { jugadorId: string; p: Pregun
 }
 
 export function Cuestionario() {
-  const { jugadorId } = useParams({ from: "/j/$jugadorId/cuestionario" });
+  const { jugadorId } = useParams({ from: "/j/$jugadorId" });
   const preguntas = useQuery({ queryKey: ["preguntas"], queryFn: listarPreguntas, enabled: nubeConfigurada });
   const respuestas = useQuery({
     queryKey: ["respuestas", jugadorId],
@@ -73,10 +73,8 @@ export function Cuestionario() {
   const hechas = preguntas.data?.filter((p) => porPregunta.has(p.id)).length ?? 0;
 
   return (
-    <main className="pantalla">
-      <header className="cabecera">
-        <Link to="/j/$jugadorId" params={{ jugadorId }} className="enlace-tenue">← Volver</Link>
-        <h1>Cuestionario</h1>
+    <>
+      <div className="intro">
         <p className="sub">No hay respuestas buenas ni malas. Responde como lo harías tú.</p>
         {total > 0 && respuestas.isSuccess && (
           <p className="progreso">
@@ -84,7 +82,7 @@ export function Cuestionario() {
             <span className="barra"><span style={{ width: `${(hechas / total) * 100}%` }} /></span>
           </p>
         )}
-      </header>
+      </div>
       {preguntas.isLoading && <p className="tenue-claro">Cargando…</p>}
       {preguntas.data?.length === 0 && <p className="tenue-claro">Todavía no hay preguntas.</p>}
       {respuestas.isSuccess &&
@@ -97,6 +95,6 @@ export function Cuestionario() {
           <p className="tenue">El máster ya tiene tus respuestas. Puedes cambiar cualquiera hasta que empiece la partida.</p>
         </section>
       )}
-    </main>
+    </>
   );
 }

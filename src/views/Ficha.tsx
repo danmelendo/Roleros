@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { fichaRevelada, listarJugadores, type FichaDatos } from "../lib/api";
+import { useParams } from "@tanstack/react-router";
+import { fichaRevelada, type FichaDatos } from "../lib/api";
 import { ESQUEMA, esObjeto, modificador, mostrar, conSigno, type Item } from "../lib/ficha";
-import { guardarJugador } from "../lib/jugador";
 import { nubeConfigurada } from "../lib/supabase";
 
 /* El jugador solo recibe lo revelado (lo filtra el servidor). Aquí, lo que no
@@ -112,42 +111,19 @@ function Cuerpo({ f }: { f: FichaDatos }) {
 
 export function Ficha() {
   const { jugadorId } = useParams({ from: "/j/$jugadorId" });
-  const navigate = useNavigate();
-  const jugadores = useQuery({ queryKey: ["jugadores"], queryFn: listarJugadores, enabled: nubeConfigurada });
+  // Misma consulta (y caché) que la cabecera de JugadorLayout.
   const ficha = useQuery({
     queryKey: ["ficha", jugadorId],
     queryFn: () => fichaRevelada(jugadorId),
     enabled: nubeConfigurada,
-    refetchInterval: 60_000, // lo que revele el máster aparece solo
+    refetchInterval: 60_000,
   });
-  const yo = jugadores.data?.find((j) => j.id === jugadorId);
-  const nombre = typeof ficha.data?.nombre === "string" && ficha.data.nombre ? ficha.data.nombre : null;
 
   return (
-    <main className="pantalla">
-      <header className="cabecera fila">
-        <div>
-          <p className="sub">{yo?.nombre ?? jugadorId}</p>
-          <h1 className={nombre ? "" : "desconocido"}>{nombre ?? "¿Quién eres?"}</h1>
-        </div>
-        <button
-          className="boton chico claro"
-          onClick={() => {
-            guardarJugador(null);
-            navigate({ to: "/" });
-          }}
-        >
-          Cambiar
-        </button>
-      </header>
-
-      <Link to="/j/$jugadorId/cuestionario" params={{ jugadorId }} className="boton bloque">
-        Cuestionario
-      </Link>
-
+    <>
       {ficha.error && <p className="error-claro">{ficha.error.message}</p>}
       {ficha.isLoading && <p className="tenue-claro">Cargando…</p>}
       {(ficha.data || !nubeConfigurada) && <Cuerpo f={ficha.data ?? {}} />}
-    </main>
+    </>
   );
 }
