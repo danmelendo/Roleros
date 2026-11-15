@@ -1,0 +1,24 @@
+# Evita que Supabase pause el proyecto (plan gratis: se duerme tras ~1 semana
+# sin actividad). Hace una consulta REAL a la base de datos, no un ping a la URL.
+name: Despertar Supabase
+
+on:
+  schedule:
+    - cron: "17 8 */2 * *"   # cada 2 días, 08:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  consulta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: select id from jugadores limit 1
+        env:
+          URL: ${{ vars.VITE_SUPABASE_URL }}
+          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$URL" && test -n "$KEY" || { echo "Faltan las Variables del repo"; exit 1; }
+          # Solo la cabecera apikey: vale para la anon key (JWT) y para la
+          # nueva publishable key (sb_publishable_…), que no es un JWT.
+          curl --fail-with-body -sS "$URL/rest/v1/jugadores?select=id&limit=1" -H "apikey: $KEY"

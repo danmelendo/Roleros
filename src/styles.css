@@ -1,0 +1,91 @@
+/* Roleros · terror gótico de Ustalav: tinta, pergamino viejo y sangre seca.
+   Mobile-first, 480 px de ancho máximo como RPGym. Sin fuentes externas. */
+:root {
+  --bg: #0f0d12;
+  --card: #1a161d;
+  --card-2: #221c26;
+  --line: #3a3040;
+  --text: #e8dfd0;
+  --tenue: #9a8f9e;
+  --oro: #c9a227;
+  --sangre: #9e2b2b;
+  --musgo: #6f9a7a;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+body { -webkit-tap-highlight-color: transparent; }
+
+.shell { max-width: 480px; margin: 0 auto; padding: calc(var(--st) + 16px) 16px calc(var(--sb) + 24px); }
+.pantalla { display: flex; flex-direction: column; gap: 14px; }
+.pantalla.ancha { max-width: 100%; }
+
+h1, h2 { font-family: var(--serif); font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: 2rem; color: var(--oro); }
+h2 { font-size: 1.15rem; margin-bottom: 10px; }
+h2.pregunta { font-size: 1.05rem; line-height: 1.4; }
+code { font-family: var(--mono); font-size: 0.85em; }
+
+.cabecera { padding: 8px 0 4px; }
+.cabecera .sub { margin: 6px 0 0; color: var(--tenue); font-style: italic; font-family: var(--serif); }
+.fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.tarjeta { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.tarjeta.olvidada { background: transparent; border-style: dashed; }
+.tarjeta.olvidada h2 { color: var(--tenue); }
+
+.lista { display: flex; flex-direction: column; gap: 8px; }
+
+.boton {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 10px 16px;
+  background: var(--card-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+  font: 600 1rem var(--sans); text-decoration: none; cursor: pointer;
+}
+.boton:hover:not(:disabled) { border-color: var(--oro); }
+.boton:disabled { opacity: 0.5; cursor: default; }
+.boton.grande { min-height: 56px; font-family: var(--serif); font-size: 1.2rem; border-left-width: 4px; }
+.boton.chico { min-height: 36px; padding: 6px 12px; font-size: 0.9rem; }
+.boton.bloque { width: 100%; }
+.boton.opcion { justify-content: flex-start; text-align: left; font-weight: 500; }
+.boton.opcion.elegida { border-color: var(--oro); background: #2a2214; }
+
+.campo {
+  width: 100%; margin: 0 0 10px; padding: 10px 12px;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+  font: 1rem var(--sans); resize: vertical;
+}
+.campo:focus { outline: none; border-color: var(--oro); }
+.campo.mono { font-family: var(--mono); font-size: 0.85rem; line-height: 1.4; }
+.tarjeta form + .ok, .tarjeta .lista + form { margin-top: 10px; }
+
+.rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 0; }
+.celda { background: var(--card-2); border-radius: 4px; padding: 8px; }
+.celda dt { font-size: 0.75rem; color: var(--tenue); text-transform: uppercase; letter-spacing: 0.05em; }
+.celda dd { margin: 2px 0 0; }
+.celda .rejilla { grid-template-columns: 1fr; }
+.cifra { font-family: var(--mono); font-size: 1.05rem; }
+.hueco { color: var(--tenue); font-style: italic; font-family: var(--serif); margin: 0; }
+
+.rutas { list-style: none; margin: 0; padding: 0; }
+.rutas li { padding: 4px 0; }
+.rutas label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.rutas input { width: 18px; height: 18px; accent-color: var(--oro); }
+
+.respuesta { border-top: 1px solid var(--line); padding: 8px 0; }
+.respuesta p { margin: 0 0 4px; }
+
+.tenue { color: var(--tenue); margin: 0 0 8px; }
+.error { color: #e07070; margin: 6px 0 0; }
+.ok { color: var(--musgo); margin: 6px 0 0; }
+.aviso { background: #3a1f1f; border: 1px solid var(--sangre); border-radius: 6px; padding: 10px 12px; margin: 0 0 14px; font-size: 0.9rem; }
+.enlace-tenue { color: var(--tenue); text-decoration: none; font-size: 0.9rem; }
+.pie { text-align: center; padding-top: 24px; }

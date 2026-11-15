@@ -1,0 +1,8 @@
+{
+  "appId": "app.melendo.roleros",
+  "appName": "Roleros",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#0F0D12"
+  }
+}
