@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate, useParams } from "@tanstack/react-router";
-import { fichaRevelada, listarJugadores, misAcciones } from "../lib/api";
+import { fichaRevelada, listarJugadores, listarPreguntas, misAcciones, misRespuestas } from "../lib/api";
 import { guardarJugador } from "../lib/jugador";
 import { nubeConfigurada } from "../lib/supabase";
 import { Retrato } from "../components/Retrato";
@@ -35,6 +36,17 @@ export function JugadorLayout() {
     refetchInterval: 60_000,
   });
 
+  /* Hasta acabar el cuestionario no hay nada más: ni pestañas, ni retrato.
+     (La ficha, además, la cierra el servidor en get_ficha_revelada.) */
+  const preguntas = useQuery({ queryKey: ["preguntas"], queryFn: listarPreguntas, enabled: nubeConfigurada });
+  const respuestas = useQuery({ queryKey: ["respuestas", jugadorId], queryFn: () => misRespuestas(jugadorId), enabled: nubeConfigurada });
+  const sabido = !nubeConfigurada || (preguntas.isSuccess && respuestas.isSuccess);
+  const completo = !nubeConfigurada || (sabido && preguntas.data!.every((p) => respuestas.data!.some((r) => r.pregunta_id === p.id)));
+  const enCuestionario = pathname.endsWith("/cuestionario");
+  useEffect(() => {
+    if (sabido && !completo && !enCuestionario) navigate({ to: "/j/$jugadorId/cuestionario", params: { jugadorId }, replace: true });
+  }, [sabido, completo, enCuestionario, jugadorId, navigate]);
+
   const yo = jugadores.data?.find((j) => j.id === jugadorId);
   const nombre = typeof ficha.data?.nombre === "string" && ficha.data.nombre ? ficha.data.nombre : null;
   const enAcciones = pathname.endsWith("/acciones");
@@ -53,7 +65,7 @@ export function JugadorLayout() {
     <main className="pantalla">
       <header className="cabecera fila">
         <div className="quien-soy">
-          <Retrato jugadorId={jugadorId} editable />
+          {completo && <Retrato jugadorId={jugadorId} editable />}
           <div>
             <p className="sub">{yo?.nombre ?? "…"}</p>
             <h1 className={nombre ? "" : "desconocido"}>{nombre ?? "¿Quién eres?"}</h1>
@@ -70,24 +82,30 @@ export function JugadorLayout() {
         </button>
       </header>
 
-      <nav className="pestanas" aria-label="Secciones">
-        {pestanas.map((p) => (
-          <Link
-            key={p.to}
-            to={p.to}
-            params={{ jugadorId }}
-            className="pestana"
-            activeProps={{ className: "activa" }}
-            activeOptions={{ exact: "exacta" in p && p.exacta }}
-          >
-            {p.nombre}
-            {"punto" in p && p.punto && <span className="punto" aria-label="respuesta nueva" />}
-          </Link>
-        ))}
-      </nav>
+      {!sabido && <p className="tenue-claro">Cargando…</p>}
+      {sabido && !completo && enCuestionario && <Outlet />}
 
-      <AvisoInstalar />
-      <Outlet />
+      {completo && (
+        <>
+          <nav className="pestanas" aria-label="Secciones">
+            {pestanas.map((p) => (
+              <Link
+                key={p.to}
+                to={p.to}
+                params={{ jugadorId }}
+                className="pestana"
+                activeProps={{ className: "activa" }}
+                activeOptions={{ exact: "exacta" in p && p.exacta }}
+              >
+                {p.nombre}
+                {"punto" in p && p.punto && <span className="punto" aria-label="respuesta nueva" />}
+              </Link>
+            ))}
+          </nav>
+          <AvisoInstalar />
+          <Outlet />
+        </>
+      )}
     </main>
   );
 }

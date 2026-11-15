@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
-import { fichaRevelada, listarPreguntas, misRespuestas, type FichaDatos } from "../lib/api";
+import { useParams } from "@tanstack/react-router";
+import { fichaRevelada, type FichaDatos } from "../lib/api";
 import { Retrato } from "../components/Retrato";
 import { ESQUEMA, esObjeto, modificador, mostrar, conSigno, type Item } from "../lib/ficha";
 import { nubeConfigurada } from "../lib/supabase";
@@ -110,22 +110,10 @@ function Cuerpo({ f }: { f: FichaDatos }) {
   );
 }
 
-/* Antes de la ficha: el servidor no la da hasta que el jugador acaba el
-   cuestionario y el máster la marca como asignada. Aquí solo se explica cuál
-   de las dos cosas falta. */
-function Espera({ jugadorId, respondidas, total }: { jugadorId: string; respondidas: number; total: number }) {
-  if (respondidas < total) {
-    return (
-      <section className="pagina espera">
-        <h2>Antes de nada</h2>
-        <p>Tu personaje todavía no tiene ficha. Responde el cuestionario: con tus respuestas el máster la prepara.</p>
-        <p className="tenue">Llevas {respondidas} de {total}.</p>
-        <Link to="/j/$jugadorId/cuestionario" params={{ jugadorId }} className="boton">
-          {respondidas ? "Seguir con el cuestionario" : "Empezar el cuestionario"}
-        </Link>
-      </section>
-    );
-  }
+/* Antes de la ficha: el servidor no la da hasta que el máster la marca como
+   asignada. (Con el cuestionario a medias ni se llega aquí: JugadorLayout
+   solo enseña el cuestionario.) */
+function Espera({ jugadorId }: { jugadorId: string }) {
   return (
     <section className="pagina espera">
       <Retrato jugadorId={jugadorId} editable grande />
@@ -137,23 +125,16 @@ function Espera({ jugadorId, respondidas, total }: { jugadorId: string; respondi
 
 export function Ficha() {
   const { jugadorId } = useParams({ from: "/j/$jugadorId" });
-  // Mismas consultas (y caché) que la cabecera y el cuestionario.
+  // Misma consulta (y caché) que la cabecera.
   const ficha = useQuery({
     queryKey: ["ficha", jugadorId],
     queryFn: () => fichaRevelada(jugadorId),
     enabled: nubeConfigurada,
     refetchInterval: 60_000,
   });
-  const preguntas = useQuery({ queryKey: ["preguntas"], queryFn: listarPreguntas, enabled: nubeConfigurada });
-  const respuestas = useQuery({ queryKey: ["respuestas", jugadorId], queryFn: () => misRespuestas(jugadorId), enabled: nubeConfigurada });
 
   if (!nubeConfigurada) return <Cuerpo f={{}} />;
-  const error = ficha.error ?? preguntas.error ?? respuestas.error;
-  if (error) return <p className="error-claro">{error.message}</p>;
-  if (!ficha.isSuccess || !preguntas.isSuccess || !respuestas.isSuccess) return <p className="tenue-claro">Cargando…</p>;
-
-  if (ficha.data) return <Cuerpo f={ficha.data} />;
-  const activas = new Set(preguntas.data.map((p) => p.id));
-  const respondidas = respuestas.data.filter((r) => activas.has(r.pregunta_id)).length;
-  return <Espera jugadorId={jugadorId} respondidas={respondidas} total={activas.size} />;
+  if (ficha.error) return <p className="error-claro">{ficha.error.message}</p>;
+  if (!ficha.isSuccess) return <p className="tenue-claro">Cargando…</p>;
+  return ficha.data ? <Cuerpo f={ficha.data} /> : <Espera jugadorId={jugadorId} />;
 }

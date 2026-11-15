@@ -95,7 +95,7 @@ export function Cuestionario() {
       {total > 0 && hechas === total && (
         <section className="tarjeta final">
           <h2>¡Listo!</h2>
-          <p className="tenue">El máster ya tiene tus respuestas. Puedes cambiar cualquiera hasta que empiece la partida.</p>
+          <p className="tenue">El máster ya tiene tus respuestas. Ya puedes moverte por el resto de pestañas, y cambiar cualquier respuesta hasta que empiece la partida.</p>
         </section>
       )}
     </>
