@@ -59,6 +59,26 @@ export async function revelar(jugadorId: string, ruta: string, si: boolean): Pro
   else ok(await supabase.from("ficha_revelado").delete().eq("jugador_id", jugadorId).eq("campo_path", ruta));
 }
 
+export type ResumenJugador = { nombre?: string; clase?: string; nivel?: number; respuestas: number };
+
+/** Portada del biombo: de cada jugador, su personaje y cuánto lleva del cuestionario. */
+export async function resumenMaster(): Promise<Record<string, ResumenJugador>> {
+  const [fichas, resp] = await Promise.all([
+    supabase.from("fichas").select("jugador_id, datos"),
+    supabase.from("cuestionario_resp").select("jugador_id"),
+  ]);
+  const out: Record<string, ResumenJugador> = {};
+  const de = (id: string) => (out[id] ??= { respuestas: 0 });
+  for (const f of ok(fichas) as { jugador_id: string; datos: FichaDatos }[]) {
+    const r = de(f.jugador_id);
+    if (typeof f.datos.nombre === "string" && f.datos.nombre) r.nombre = f.datos.nombre;
+    if (typeof f.datos.clase === "string" && f.datos.clase) r.clase = f.datos.clase;
+    if (typeof f.datos.nivel === "number") r.nivel = f.datos.nivel;
+  }
+  for (const x of ok(resp) as { jugador_id: string }[]) de(x.jugador_id).respuestas++;
+  return out;
+}
+
 export async function respuestasDe(jugadorId: string): Promise<RespuestaMaster[]> {
   return ok(await supabase.from("cuestionario_resp").select("jugador_id, pregunta_id, respuesta, updated_at").eq("jugador_id", jugadorId));
 }

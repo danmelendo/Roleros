@@ -85,8 +85,8 @@ export function Cuestionario() {
           </p>
         )}
       </header>
-      {preguntas.isLoading && <p className="tenue">Cargando…</p>}
-      {preguntas.data?.length === 0 && <p className="tenue">Todavía no hay preguntas.</p>}
+      {preguntas.isLoading && <p className="tenue-claro">Cargando…</p>}
+      {preguntas.data?.length === 0 && <p className="tenue-claro">Todavía no hay preguntas.</p>}
       {respuestas.isSuccess &&
         preguntas.data?.map((p) => (
           <PreguntaCard key={p.id} jugadorId={jugadorId} p={p} guardada={porPregunta.get(p.id)} />

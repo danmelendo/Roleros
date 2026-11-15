@@ -17,8 +17,8 @@ export function Inicio() {
 
   return (
     <main className="pantalla">
-      <header className="cabecera">
-        <h1>Roleros</h1>
+      <header className="cabecera inicio-cabecera">
+        <h1 className="logo">Roleros</h1>
         <p className="sub">Despiertas entre la hojarasca. No sabes cómo has llegado aquí.</p>
       </header>
 

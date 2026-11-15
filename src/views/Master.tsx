@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { listarJugadores } from "../lib/api";
+import { listarJugadores, listarPreguntas, resumenMaster } from "../lib/api";
 import { useSesion } from "../lib/sesion";
 import { supabase } from "../lib/supabase";
 
@@ -43,6 +43,8 @@ export function Master() {
   const { sesion, esMaster, comprobando } = useSesion();
   const qc = useQueryClient();
   const jugadores = useQuery({ queryKey: ["jugadores"], queryFn: listarJugadores, enabled: esMaster });
+  const resumen = useQuery({ queryKey: ["resumen-master"], queryFn: resumenMaster, enabled: esMaster });
+  const preguntas = useQuery({ queryKey: ["preguntas"], queryFn: listarPreguntas, enabled: esMaster });
 
   return (
     <main className="pantalla">
@@ -52,29 +54,34 @@ export function Master() {
           <h1>Biombo</h1>
         </div>
         {sesion && (
-          <button className="boton chico" onClick={async () => { await supabase.auth.signOut(); qc.clear(); }}>
+          <button className="boton chico claro" onClick={async () => { await supabase.auth.signOut(); qc.clear(); }}>
             Salir
           </button>
         )}
       </header>
 
-      {comprobando && <p className="tenue">Comprobando…</p>}
+      {comprobando && <p className="tenue-claro">Comprobando…</p>}
       {!comprobando && !sesion && <Login />}
       {!comprobando && sesion && !esMaster && (
-        <p className="error">Esta cuenta no es de máster. Añádela a la tabla <code>masters</code>.</p>
+        <p className="error-claro">Esta cuenta no es de máster. Añádela a la tabla <code>masters</code>.</p>
       )}
 
       {esMaster && (
-        <section className="tarjeta">
-          <h2>Jugadores</h2>
-          <div className="lista">
-            {jugadores.data?.map((j) => (
-              <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="boton grande" style={{ borderColor: j.color ?? undefined }}>
-                {j.nombre}
+        <div className="lista">
+          {jugadores.data?.map((j) => {
+            const r = resumen.data?.[j.id];
+            const pj = r?.nombre ? `${r.nombre}${r.clase ? `, ${r.clase}` : ""}${r.nivel ? ` ${r.nivel}` : ""}` : "Sin ficha";
+            return (
+              <Link key={j.id} to="/master/$jugadorId" params={{ jugadorId: j.id }} className="pagina jugador" style={{ borderLeftColor: j.color ?? undefined }}>
+                <span className="jugador-nombre">{j.nombre}</span>
+                <span className="jugador-pj">{pj}</span>
+                <span className="jugador-meta">
+                  Cuestionario: {r?.respuestas ?? 0} de {preguntas.data?.length ?? "…"}
+                </span>
               </Link>
-            ))}
-          </div>
-        </section>
+            );
+          })}
+        </div>
       )}
     </main>
   );
