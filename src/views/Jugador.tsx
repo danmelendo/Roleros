@@ -43,9 +43,12 @@ export function JugadorLayout() {
   const sabido = !nubeConfigurada || (preguntas.isSuccess && respuestas.isSuccess);
   const completo = !nubeConfigurada || (sabido && preguntas.data!.every((p) => respuestas.data!.some((r) => r.pregunta_id === p.id)));
   const enCuestionario = pathname.endsWith("/cuestionario");
+  // Solo dentro de /j/<id>: al pulsar "Cambiar" la ruta pasa a "/" un instante
+  // antes de desmontar esto, y sin la comprobación devolvía al cuestionario.
+  const dentro = pathname.startsWith(`/j/${jugadorId}`);
   useEffect(() => {
-    if (sabido && !completo && !enCuestionario) navigate({ to: "/j/$jugadorId/cuestionario", params: { jugadorId }, replace: true });
-  }, [sabido, completo, enCuestionario, jugadorId, navigate]);
+    if (dentro && sabido && !completo && !enCuestionario) navigate({ to: "/j/$jugadorId/cuestionario", params: { jugadorId }, replace: true });
+  }, [dentro, sabido, completo, enCuestionario, jugadorId, navigate]);
 
   const yo = jugadores.data?.find((j) => j.id === jugadorId);
   const nombre = typeof ficha.data?.nombre === "string" && ficha.data.nombre ? ficha.data.nombre : null;
