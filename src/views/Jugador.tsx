@@ -4,6 +4,7 @@ import { fichaRevelada, listarJugadores, misAcciones } from "../lib/api";
 import { guardarJugador } from "../lib/jugador";
 import { nubeConfigurada } from "../lib/supabase";
 import { Retrato } from "../components/Retrato";
+import { AvisoInstalar } from "../components/AvisoInstalar";
 
 /* Cuándo vio el jugador sus acciones por última vez: para el punto rojo de
    "el máster te ha contestado". Por móvil, en localStorage. */
@@ -85,6 +86,7 @@ export function JugadorLayout() {
         ))}
       </nav>
 
+      <AvisoInstalar />
       <Outlet />
     </main>
   );

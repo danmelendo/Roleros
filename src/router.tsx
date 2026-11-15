@@ -1,5 +1,6 @@
 import { createHashHistory, createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
 import { Inicio } from "./views/Inicio";
+import { Instalar } from "./views/Instalar";
 import { JugadorLayout } from "./views/Jugador";
 import { Ficha } from "./views/Ficha";
 import { Petate } from "./views/Petate";
@@ -36,6 +37,7 @@ const deJugador = [
 
 const rutas = [
   createRoute({ getParentRoute: () => raiz, path: "/", component: Inicio }),
+  createRoute({ getParentRoute: () => raiz, path: "/instalar", component: Instalar }),
   jugador.addChildren(deJugador),
   createRoute({ getParentRoute: () => raiz, path: "/master", component: Master }),
   // Estática: gana a /master/$jugadorId.

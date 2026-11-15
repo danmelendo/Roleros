@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { listarJugadores } from "../lib/api";
 import { guardarJugador, jugadorGuardado } from "../lib/jugador";
 import { nubeConfigurada } from "../lib/supabase";
+import { AvisoInstalar } from "../components/AvisoInstalar";
 
 export function Inicio() {
   const navigate = useNavigate();
@@ -43,7 +44,11 @@ export function Inicio() {
         </div>
       </section>
 
+      <AvisoInstalar />
+
       <footer className="pie">
+        <Link to="/instalar" className="enlace-tenue">Instalar en el móvil</Link>
+        <span className="pie-sep">·</span>
         <Link to="/master" className="enlace-tenue">Máster</Link>
       </footer>
     </main>

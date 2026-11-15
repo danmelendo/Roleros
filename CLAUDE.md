@@ -26,7 +26,8 @@ App de la campaña de rol de Dan (Pathfinder 1e, Ustalav), con 3 jugadores. UI e
 ```
 src/
   main.tsx              QueryClient + Router + fuentes + service worker
-  router.tsx            /  ·  /j/$id (ficha, petate, acciones, diario, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/$id
+  router.tsx            /  ·  /instalar  ·  /j/$id (ficha, petate, acciones, diario, cuestionario)  ·  /master  ·  /master/acciones  ·  /master/$id
+  lib/instalar.ts       plataforma, ¿ya instalada?, botón de instalar de Chrome (beforeinstallprompt)
   lib/api.ts            TODAS las llamadas a Supabase, tipadas
   lib/ficha.ts          ESQUEMA de la ficha (lo usan el biombo y el jugador), PLANTILLA, estaVisible()
   lib/formato.ts        tipos de acción, oro, fechas relativas
@@ -67,6 +68,7 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
 
 - **Fondo de cuero (`--cuero`) y tarjetas de pergamino (`.pagina`)**, con tinta parda y títulos en rojo de rúbrica.
 - **Fuentes servidas desde la app** (`@fontsource`, subconjunto latin): Cinzel (títulos, etiquetas y botones), EB Garamond (texto) y UnifrakturMaguntia (solo el título y la capitular del trasfondo). No metas Google Fonts por URL.
+- **Márgenes seguros:** `.shell` deja `--hueco-abajo` (zona segura + 88 px) bajo el último botón, porque la barra flotante de Safari y la de gestos de Android tapan la página sin contar como zona segura. Lo fijo abajo usa `var(--sb)`.
 - **Todas las tarjetas pesan lo mismo:** lo no revelado se marca con "?" dentro, sin apagar la tarjeta. Dan pidió que ninguna destaque sobre las demás y que todo sea compacto.
 
 ## Comandos
