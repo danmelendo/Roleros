@@ -40,6 +40,7 @@ type Criatura = {
   id: string;
   pj: boolean;
   aliado?: boolean;
+  companero?: boolean;        // PNJ que lleva el máster con el grupo: se queda entre combates, como un PJ
   ficha?: string;             // jugador_id, si sale de una ficha
   conFicha?: boolean;         // la ficha existe (si no, los números son a mano)
   jugador?: string;
@@ -71,7 +72,17 @@ type Criatura = {
   espera: boolean;
 };
 type Efecto = { id: string; objetivo: string; nombre: string; tipo: TipoEfecto; rondas: number | null; dueno: string | null; nota: string };
-type Plantilla = { nombre: string; pg: string; ca: number; mod: number; notas: string; aliado: boolean; bloque?: Bloque | null };
+/** Ficha de PNJ guardada (guardia, clérigo, espada de alquiler…) para reutilizarla. */
+type Plantilla = {
+  nombre: string; pg: string; ca: number; mod: number; notas: string;
+  aliado: boolean; companero?: boolean;
+  toque?: number | null; desprevenido?: number | null; fort?: number | null; ref?: number | null; vol?: number | null; percepcion?: number | null;
+  bloque?: Bloque | null;
+};
+type Bando = "enemigo" | "aliado" | "companero";
+const BANDOS: [Bando, string][] = [["enemigo", "Enemigo"], ["aliado", "Aliado (solo este combate)"], ["companero", "Compañero del grupo (se queda)"]];
+/** PJ y compañeros siguen en la mesa entre combates; el resto se va al terminar. */
+const fijo = (c: { pj: boolean; companero?: boolean }) => c.pj || !!c.companero;
 type Linea = { r: number; texto: string; sep?: boolean };
 type Mesa = {
   v: number;
@@ -133,7 +144,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   let avisos: Aviso[] = [];
   let leyendo = false;
   let vivo = true;
-  let bloque: Bloque | null = null;        // bloque de estadísticas leído en Enemigos
+  let bloque: Bloque | null = null;        // bloque de estadísticas leído en la pestaña PNJ
   const B: Record<string, string | boolean> = {}; // borradores de los formularios del panel
 
   function cargar(): Mesa | null {
@@ -178,7 +189,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   /* ------------------------------------------------------------- vida -- */
   /** Cómo está de PG. fuera = se salta su turno. */
   function estadoPG(c: Criatura): { t: string; k: string; fuera?: boolean } | null {
-    if (c.pj) {
+    if (fijo(c)) {
       if (c.con && c.pg <= -c.con) return { t: "Muerto", k: "muerto", fuera: true };
       if (c.pg < 0) return { t: "Moribundo", k: "grave" };
       if (c.pg === 0) return { t: "Incapacitado", k: "grave" };
@@ -332,7 +343,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   }
   function terminar() {
     for (const c of Object.values(S.criaturas)) {
-      if (c.pj) { c.ini = null; c.espera = false; continue; }
+      if (fijo(c)) { c.ini = null; c.espera = false; continue; }
       quitarDeOrden(c.id);
       delete S.criaturas[c.id];
     }
@@ -501,15 +512,23 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       B["ef-nombre"] = ""; B["ef-nota"] = ""; B["ef-r"] = "";
     });
   }
-  function anadirEnemigos() {
+  function anadirPNJ() {
     const base = texto("en-nombre");
-    if (!base) return aviso("Ponle nombre a la criatura.");
+    if (!base) return aviso("Ponle nombre al PNJ.");
     const pgTx = texto("en-pg") || "1";
     if (!tirar(pgTx)) return aviso(`PG «${esc(pgTx)}»: pon un número o dados, como 3d8+6.`, "malo", true);
     const cuantos = Math.max(1, Math.min(30, entero(B["en-n"], 1)!));
     const ca = entero(B["en-ca"], 10)!, mod = entero(B["en-mod"], 0)!, notas = texto("en-notas");
-    const aliado = B["en-tipo"] === "aliado";
+    const tipo = (B["en-tipo"] || "enemigo") as Bando;
+    const aliado = tipo !== "enemigo", companero = tipo === "companero";
     const comun = B["en-comun"] !== false;
+    // Datos de la ficha: lo escrito a mano manda; si no, lo del bloque pegado.
+    const dato = (k: string, deBloque: number | null | undefined) => entero(B[k], null) ?? deBloque ?? null;
+    const extra = {
+      toque: dato("en-toque", bloque?.toque), desprevenido: dato("en-desp", bloque?.desprevenido),
+      fort: dato("en-fort", bloque?.fort), ref: dato("en-ref", bloque?.ref), vol: dato("en-vol", bloque?.vol),
+      percepcion: dato("en-perc", bloque?.percepcion),
+    };
     cambiar(() => {
       avisos = [];
       // Numeración: sigue la que ya haya en la mesa ("Necrófago 3", "Necrófago 4"…).
@@ -524,26 +543,26 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       for (let k = 0; k < cuantos; k++) {
         const pg = Math.max(1, tirar(pgTx)!.total);
         const id = uid();
-        const c: Criatura = { id, pj: false, aliado, nombre: numerar ? `${base} ${max + k + 1}` : base, pgMax: pg, pg, temp: 0, noLetal: 0, ca, mod, notas, ini: null, grupo, espera: false };
+        const c: Criatura = { id, pj: false, aliado, companero, nombre: numerar ? `${base} ${max + k + 1}` : base, pgMax: pg, pg, temp: 0, noLetal: 0, ca, mod, notas, ini: null, grupo, espera: false, ...extra };
         if (bloque) {
           Object.assign(c, {
-            toque: bloque.toque, desprevenido: bloque.desprevenido, fort: bloque.fort, ref: bloque.ref, vol: bloque.vol,
-            dmc: bloque.dmc, percepcion: bloque.percepcion, ataques: bloque.ataques, vd: bloque.vd,
+            dmc: bloque.dmc, ataques: bloque.ataques, vd: bloque.vd,
             defensas: bloque.defensas, especiales: bloque.especiales, velocidad: bloque.velocidad,
           });
         }
         S.criaturas[id] = c;
         S.orden.push(id);
       }
-      log(`Entran ${cuantos} × ${base}${/d/i.test(pgTx) ? ` (PG ${pgTx})` : ""}.`);
+      log(`Entran ${cuantos} × ${base}${companero ? " (compañero del grupo)" : aliado ? " (aliado)" : ""}.`);
       if (S.activo) avisos.push({ t: `Apunta la iniciativa de ${base} en su casilla para colocarlo${cuantos > 1 ? "s" : ""} en su sitio.`, k: "" });
       if (B["en-guardar"]) {
-        const p: Plantilla = { nombre: base, pg: pgTx, ca, mod, notas, aliado, bloque };
+        const p: Plantilla = { nombre: base, pg: pgTx, ca, mod, notas, aliado, companero, ...extra, bloque };
         const i = S.plantillas.findIndex((x) => x.nombre.toLowerCase() === base.toLowerCase());
         if (i >= 0) S.plantillas[i] = p; else S.plantillas.push(p);
         S.plantillas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
       }
-      bloque = null; // el siguiente "Añadir" ya no arrastra este bloque (queda en el bestiario si se guardó)
+      bloque = null; // el siguiente "Añadir" ya no arrastra este bloque (queda en sus fichas si se guardó)
+      B["en-guardar"] = false; // guardar ficha es para este PNJ, no para los siguientes
     });
   }
   function alternarPJ(id: string) {
@@ -570,7 +589,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     const c = C(id)!;
     cambiar(() => {
       quitarDeOrden(id);
-      if (c.pj) { log(`${c.nombre} sale del combate.`); return; }
+      if (fijo(c)) { log(`${c.nombre} sale del combate.`); return; }
       delete S.criaturas[id];
       S.efectos = S.efectos.filter((e) => e.objetivo !== id);
       sel.delete(id);
@@ -592,7 +611,9 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         ${c.pj ? "" : `<label class="ancho4">Nombre<input type="text" name="nombre" value="${esc(c.nombre)}"></label>`}
         ${campo("pg", "PG actuales", c.pg)}${campo("pgMax", "PG máx.", c.pgMax, deFicha)}${campo("temp", "Temporales", c.temp || 0)}${campo("noLetal", "No letal", c.noLetal || 0)}
         ${campo("ca", "CA", c.ca, deFicha)}${campo("mod", "Mod. inic.", c.mod || 0, deFicha)}${campo("ini", "Iniciativa", c.ini)}
-        ${c.pj ? campo("con", "Con (muere a −Con)", c.con, deFicha) : `<label>Bando<select name="aliado"><option value="">Enemigo</option><option value="1"${c.aliado ? " selected" : ""}>Aliado</option></select></label>`}
+        ${c.pj || c.companero ? campo("con", "Con (muere a −Con)", c.con, deFicha) : ""}
+        ${c.pj ? "" : `<label class="ancho3">Bando<select name="bando">${BANDOS.map(([k, t]) => `<option value="${k}"${(c.companero ? "companero" : c.aliado ? "aliado" : "enemigo") === k ? " selected" : ""}>${t}</option>`).join("")}</select></label>`}
+        ${deFicha ? "" : `${campo("toque", "Toque", c.toque)}${campo("desprevenido", "Desprev.", c.desprevenido)}${campo("percepcion", "Percepción", c.percepcion)}${campo("fort", "Fort", c.fort)}${campo("ref", "Ref", c.ref)}${campo("vol", "Vol", c.vol)}`}
         <label class="ancho4">Notas<input type="text" name="notas" value="${esc(c.notas)}" placeholder="RD 5/plata, visión en la oscuridad…"></label>
       </div>
       <div class="fila-botones">
@@ -616,11 +637,14 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         nuevo.pgMax = Math.max(1, entero(f.get("pgMax"), c.pgMax)!);
         nuevo.ca = entero(f.get("ca"), c.ca)!;
         nuevo.mod = entero(f.get("mod"), 0)!;
-        if (c.pj) nuevo.con = entero(f.get("con"), null);
+        for (const k of ["toque", "desprevenido", "percepcion", "fort", "ref", "vol"] as const) nuevo[k] = entero(f.get(k), null);
       }
+      if (!deFicha && (c.pj || c.companero || f.get("bando") === "companero")) nuevo.con = entero(f.get("con"), c.con ?? null);
       if (!c.pj) {
+        const bando = String(f.get("bando") || "enemigo");
         nuevo.nombre = String(f.get("nombre") ?? "").trim() || c.nombre;
-        nuevo.aliado = !!f.get("aliado");
+        nuevo.aliado = bando !== "enemigo";
+        nuevo.companero = bando === "companero";
       }
       cambiar(() => Object.assign(S.criaturas[id], nuevo));
     };
@@ -687,7 +711,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
           <button class="boton prim grande" data-a="empezar" ${hay ? "" : "disabled"}>Empezar combate</button></div>
         <ol class="pasos tenue">
           <li>En <b>Grupo</b>, añade a la mesa los PJ (salen de sus fichas).</li>
-          <li>En <b>Enemigos</b>, añade las criaturas (o pega su bloque de d20pfsrd).</li>
+          <li>En <b>PNJ</b>, añade enemigos y aliados (o usa sus fichas guardadas). Los compañeros que llevas tú se crean ahí una vez y luego se añaden desde <b>Grupo</b>.</li>
           <li>Tirad iniciativa con dados y apunta cada resultado en su casilla (un grupo de enemigos comparte la suya).</li>
           <li><b>Empezar combate</b> ordena la lista. Después, <kbd>Espacio</kbd> pasa el turno.</li>
         </ol>
@@ -760,7 +784,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       </div>
       <div class="quien">
         <div class="nombre">${esc(c.nombre)}
-          ${c.pj ? `<span class="marca">${esc(c.jugador && c.jugador !== c.nombre ? c.jugador : "PJ")}</span>` : c.aliado ? `<span class="marca aliado">Aliado</span>` : ""}
+          ${c.pj ? `<span class="marca">${esc(c.jugador && c.jugador !== c.nombre ? c.jugador : "PJ")}</span>` : c.companero ? `<span class="marca aliado">Compañero</span>` : c.aliado ? `<span class="marca aliado">Aliado</span>` : ""}
           ${c.espera ? `<span class="marca espera">En espera</span>` : ""}
           ${e ? `<span class="estado-pg ${e.k}">${e.t}</span>` : ""}
         </div>
@@ -781,7 +805,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="icono" data-a="subir" data-id="${id}" title="Subir" ${i <= 0 ? "disabled" : ""}>↑</button>
         <button class="icono" data-a="bajar" data-id="${id}" title="Bajar" ${i >= S.orden.length - 1 ? "disabled" : ""}>↓</button>
         <button class="icono" data-a="editar" data-id="${id}" title="Editar">✎</button>
-        <button class="icono" data-a="quitar" data-id="${id}" title="${c.pj ? "Sacar del combate" : "Quitar"}">✕</button>
+        <button class="icono" data-a="quitar" data-id="${id}" title="${fijo(c) ? "Sacar del combate" : "Quitar"}">✕</button>
         ${turno ? `<button class="boton peq" data-a="retrasar" data-id="${id}" title="Retrasar el turno">Retrasar</button>` : ""}
         ${S.activo && c.espera ? `<button class="boton peq prim" data-a="actuar" data-id="${id}">Actuar ya</button>` : ""}
       </div>
@@ -795,12 +819,12 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="boton peq" data-a="selEnemigos">Elegir enemigos</button>
         <button class="boton peq" data-a="ordenar" title="Ordena por iniciativa">Ordenar</button>
       </div>
-      <div class="lista">${S.orden.length ? S.orden.map(fila).join("") : `<div class="pagina vacio tenue">${leyendo ? "Leyendo las fichas…" : "No hay nadie en la mesa. Marca a los PJ en <b>Grupo</b> y añade criaturas en <b>Enemigos</b>."}</div>`}</div>`;
+      <div class="lista">${S.orden.length ? S.orden.map(fila).join("") : `<div class="pagina vacio tenue">${leyendo ? "Leyendo las fichas…" : "No hay nadie en la mesa. Añade a los PJ en <b>Grupo</b> y a los PNJ en <b>PNJ</b>."}</div>`}</div>`;
   }
 
   function panel() {
-    const tabs: [string, string][] = [["acciones", "Acciones"], ["enemigos", "Enemigos"], ["grupo", "Grupo"], ["registro", "Registro"]];
-    const cuerpo = ({ acciones: panelAcciones, enemigos: panelEnemigos, grupo: panelGrupo, registro: panelRegistro } as Record<string, () => string>)[pestana]();
+    const tabs: [string, string][] = [["acciones", "Acciones"], ["pnj", "PNJ"], ["grupo", "Grupo"], ["registro", "Registro"]];
+    const cuerpo = ({ acciones: panelAcciones, pnj: panelPNJ, grupo: panelGrupo, registro: panelRegistro } as Record<string, () => string>)[pestana]();
     return `<aside class="pagina panel">
       <nav class="pestanas">${tabs.map(([k, t]) => `<button data-a="pestana" data-p="${k}" class="${pestana === k ? "si" : ""}">${t}</button>`).join("")}</nav>
       <div class="cuerpo-panel">${cuerpo}</div>
@@ -815,7 +839,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     return `<div class="seleccion">${ids.length ? `Sobre: <b>${nombres}</b>` : `<span class="tenue">Haz clic en alguien de la lista para elegirlo (Ctrl+clic para varios).</span>`}</div>
 
     <div class="seccion"><span class="etiqueta">Daño y curación</span>
-      <div class="cantidad"><input type="number" min="0" data-b="pg-cant" data-foco="pg-cant" value="${val("pg-cant")}" placeholder="Lo que ha salido en los dados"></div>
+      <div class="cantidad"><input type="number" min="0" data-b="pg-cant" data-foco="pg-cant" value="${val("pg-cant")}" placeholder="Introduce el valor de la tirada"></div>
       <div class="fila-botones">
         <button class="boton prim" data-a="pg" data-m="dano">Daño</button>
         <button class="boton" data-a="pg" data-m="mitad" title="Para quien ha superado la salvación">½ daño</button>
@@ -851,7 +875,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     </div>`;
   }
 
-  function panelEnemigos() {
+  function panelPNJ() {
     const b = bloque;
     const vista = b ? `<div class="leido">
         <div><b>${esc(b.nombre)}</b>${b.vd ? ` · VD ${esc(b.vd)}` : ""}${b.tipo ? ` <span class="tenue">· ${esc(b.tipo)}</span>` : ""}
@@ -864,33 +888,41 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       <div class="fila-botones"><button class="boton" data-a="leerBloque">Leer bloque</button></div>
       ${vista}
     </div>
-    <div class="seccion"><span class="etiqueta">Añadir criaturas</span>
+    <div class="seccion"><span class="etiqueta">Nuevo PNJ</span>
       <div class="campos">
-        <label class="ancho3">Nombre<input type="text" data-b="en-nombre" data-foco="en-nombre" value="${val("en-nombre")}" placeholder="Necrófago"></label>
+        <label class="ancho4">Bando<select data-b="en-tipo">${BANDOS.map(([k, t]) => `<option value="${k}"${(B["en-tipo"] || "enemigo") === k ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+        <label class="ancho3">Nombre<input type="text" data-b="en-nombre" data-foco="en-nombre" value="${val("en-nombre")}" placeholder="Guardia, Clérigo de Pharasma, Necrófago…"></label>
         <label>Cuántos<input type="number" min="1" max="30" data-b="en-n" data-foco="en-n" value="${val("en-n", "1")}"></label>
-        <label class="ancho2">PG<input type="text" data-b="en-pg" data-foco="en-pg" value="${val("en-pg")}" placeholder="13"></label>
+        <label>PG<input type="text" data-b="en-pg" data-foco="en-pg" value="${val("en-pg")}" placeholder="13"></label>
         <label>CA<input type="number" data-b="en-ca" data-foco="en-ca" value="${val("en-ca")}" placeholder="10"></label>
+        <label>Toque<input type="number" data-b="en-toque" data-foco="en-toque" value="${val("en-toque")}"></label>
+        <label>Desprev.<input type="number" data-b="en-desp" data-foco="en-desp" value="${val("en-desp")}"></label>
         <label>Mod. inic.<input type="number" data-b="en-mod" data-foco="en-mod" value="${val("en-mod")}" placeholder="0"></label>
-        <label class="ancho4">Notas<input type="text" data-b="en-notas" data-foco="en-notas" value="${val("en-notas")}" placeholder="Percepción +7, el mordisco paraliza…"></label>
-        <label class="ancho2">Bando<select data-b="en-tipo"><option value="enemigo">Enemigo</option><option value="aliado"${B["en-tipo"] === "aliado" ? " selected" : ""}>Aliado</option></select></label>
+        <label>Fort<input type="number" data-b="en-fort" data-foco="en-fort" value="${val("en-fort")}"></label>
+        <label>Ref<input type="number" data-b="en-ref" data-foco="en-ref" value="${val("en-ref")}"></label>
+        <label>Vol<input type="number" data-b="en-vol" data-foco="en-vol" value="${val("en-vol")}"></label>
+        <label class="ancho2">Percepción<input type="number" data-b="en-perc" data-foco="en-perc" value="${val("en-perc")}"></label>
+        <label class="ancho2">&nbsp;</label>
+        <label class="ancho4">Notas<input type="text" data-b="en-notas" data-foco="en-notas" value="${val("en-notas")}" placeholder="Maza +3 (1d8+1), canaliza 2d6, RD 5/plata…"></label>
       </div>
       <label class="casilla"><input type="checkbox" data-b="en-comun" ${B["en-comun"] === false ? "" : "checked"}> Misma iniciativa para todo el grupo</label>
-      <label class="casilla"><input type="checkbox" data-b="en-guardar" ${B["en-guardar"] ? "checked" : ""}> Guardarla en mi bestiario</label>
-      <div class="fila-botones"><button class="boton prim" data-a="anadirEnemigos">Añadir a la mesa</button></div>
-      <p class="ayuda">Con el combate empezado, entran al final de la lista: apunta su iniciativa en su casilla y se colocan en su sitio (si van en grupo, basta con la de uno).</p>
+      <label class="casilla"><input type="checkbox" data-b="en-guardar" ${B["en-guardar"] ? "checked" : ""}> Guardar su ficha en «Fichas de PNJ»</label>
+      <div class="fila-botones"><button class="boton prim" data-a="anadirPNJ">Añadir a la mesa</button></div>
+      <p class="ayuda">Los <b>compañeros del grupo</b> (espadas de alquiler, PNJ que llevas tú para equilibrar) se quedan en la mesa entre combates con sus PG, como los PJ; los ves en <b>Grupo</b>. Enemigos y aliados se van al terminar el combate. Con el combate empezado, apunta la iniciativa del que entra en su casilla y se coloca en su sitio.</p>
     </div>
-    <div class="seccion"><span class="etiqueta">Mi bestiario</span>
+    <div class="seccion"><span class="etiqueta">Fichas de PNJ</span>
       ${S.plantillas.length ? `<div class="lineas">${S.plantillas.map((p, i) => `<div class="linea">
-        <span class="t"><b>${esc(p.nombre)}</b> <small>· PG ${esc(p.pg)} · CA ${p.ca} · inic. ${signo(p.mod)}${p.aliado ? " · aliado" : ""}</small></span>
-        <button class="boton peq" data-a="plantilla" data-i="${i}">Usar</button>
-        <button class="icono" data-a="borrarPlantilla" data-i="${i}" title="Borrar del bestiario">✕</button></div>`).join("")}</div>`
-        : `<p class="ayuda">Marca «Guardarla en mi bestiario» al añadir una criatura y aparecerá aquí la próxima vez.</p>`}
+        <span class="t"><b>${esc(p.nombre)}</b> <small>· ${p.companero ? "compañero" : p.aliado ? "aliado" : "enemigo"} · PG ${esc(p.pg)} · CA ${p.ca} · inic. ${signo(p.mod)}</small></span>
+        <button class="boton peq" data-a="plantilla" data-i="${i}" title="Rellena el formulario de arriba">Usar</button>
+        <button class="icono" data-a="borrarPlantilla" data-i="${i}" title="Borrar la ficha">✕</button></div>`).join("")}</div>`
+        : `<p class="ayuda">Aquí quedan las fichas de PNJ que guardes (guardias, clérigos, mercenarios, criaturas…) para usarlas en otros combates. Marca «Guardar su ficha» al añadirlos.</p>`}
     </div>`;
   }
 
   function panelGrupo() {
     const pjs = Object.values(S.criaturas).filter((c) => c.pj).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-    const fuera = pjs.filter((c) => c.conFicha && !S.orden.includes(c.id));
+    const companeros = Object.values(S.criaturas).filter((c) => c.companero).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const fuera = [...pjs.filter((c) => c.conFicha), ...companeros].filter((c) => !S.orden.includes(c.id));
     const cuando = S.leidas ? new Date(S.leidas).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "nunca";
     return `<div class="seccion"><span class="etiqueta">Fichas de los jugadores</span>
       ${pjs.length ? `<div class="lineas">${pjs.map((c) => {
@@ -912,10 +944,24 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       </div>
       <p class="ayuda">Se releen solas cada vez que abres esta pestaña. Última lectura: ${esc(cuando)}. PG máx., CA, iniciativa, Con, salvaciones, DMC y Percepción salen siempre de la ficha; los PG actuales también, salvo en mitad de un combate, que los llevas tú aquí.</p>
     </div>
+    <div class="seccion"><span class="etiqueta">Compañeros (PNJ que llevas tú)</span>
+      ${companeros.length ? `<div class="lineas">${companeros.map((c) => {
+        const dentro = S.orden.includes(c.id);
+        return `<div class="linea">
+          <span class="punto" style="background:var(--musgo)"></span>
+          <span class="t"><b>${esc(c.nombre)}</b><br><small>${c.pg}/${c.pgMax} PG · CA ${c.ca} · inic. ${signo(c.mod || 0)}</small></span>
+          <button class="icono" data-a="editar" data-id="${c.id}" title="Editar su ficha">✎</button>
+          ${dentro
+            ? `<span class="en-mesa">En la mesa</span><button class="icono" data-a="alternarPJ" data-id="${c.id}" title="Sacar de la mesa">✕</button>`
+            : `<button class="boton peq prim" data-a="alternarPJ" data-id="${c.id}">Añadir a la mesa</button>
+               <button class="icono" data-a="despedir" data-id="${c.id}" title="Despedirlo del grupo (se borra)">🗑</button>`}
+        </div>`;
+      }).join("")}</div>` : `<p class="ayuda">Créalos en <b>PNJ</b> con el bando «Compañero del grupo»: espadas de alquiler, un clérigo que os acompaña… Los llevas tú y se quedan con sus PG de un combate a otro.</p>`}
+    </div>
     <div class="seccion"><span class="etiqueta">Después del combate</span>
       <div class="fila-botones">
         <button class="boton" data-a="apuntarPG" title="Escribe en cada ficha los PG actuales de la mesa">Apuntar PG en las fichas</button>
-        <button class="boton" data-a="curarGrupo" title="Tras un descanso largo">Curar a todos</button>
+        <button class="boton" data-a="curarGrupo" title="Tras un descanso largo: PJ y compañeros">Curar a todos</button>
       </div>
       <p class="ayuda">Las fichas solo cambian cuando pulsas «Apuntar PG en las fichas» (también te lo ofrece al terminar el combate).</p>
     </div>`;
@@ -937,7 +983,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     empezar: () => empezar(),
     ordenar: () => cambiar(ordenar),
     terminar: () => {
-      if (!confirm("¿Terminar el combate? Se quitan los enemigos; los PJ se quedan con sus PG.")) return;
+      if (!confirm("¿Terminar el combate? Se van los enemigos y los aliados de paso; PJ y compañeros se quedan con sus PG.")) return;
       const conFicha = S.orden.some((x) => C(x)?.pj && C(x)?.conFicha);
       cambiar(terminar);
       if (conFicha && confirm("¿Apunto en las fichas los PG con que acaban los PJ?")) void apuntarPGs();
@@ -978,7 +1024,18 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       sel = new Set(S.orden.filter((x) => { const c = C(x)!; return !c.pj && !c.aliado && !estadoPG(c)?.fuera; }));
       render();
     },
-    anadirEnemigos: () => anadirEnemigos(),
+    anadirPNJ: () => anadirPNJ(),
+    despedir: (b) => {
+      const c = C(id(b));
+      if (!c || !confirm(`¿Despedir a ${c.nombre}? Se borra de la mesa (su ficha de PNJ, si la guardaste, sigue en «Fichas de PNJ»).`)) return;
+      cambiar(() => {
+        quitarDeOrden(c.id);
+        delete S.criaturas[c.id];
+        S.efectos = S.efectos.filter((e) => e.objetivo !== c.id);
+        sel.delete(c.id);
+        log(`${c.nombre} deja el grupo.`);
+      });
+    },
     leerBloque: () => {
       const b = leerBloque(texto("en-bloque"));
       if (!b) return aviso("No reconozco ese bloque. Copia desde el nombre (con su CR) hasta la defensa y el ataque.");
@@ -986,7 +1043,10 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       Object.assign(B, {
         "en-nombre": b.nombre, "en-pg": String(b.pg ?? b.dadosPG ?? ""), "en-ca": b.ca != null ? String(b.ca) : "",
         "en-mod": b.ini != null ? String(b.ini) : "", "en-n": "1", "en-bloque": "", "en-guardar": true,
-        "en-notas": "", // percepción, defensas y ataques ya salen en la fila
+        "en-notas": "", // defensas y ataques ya salen en la fila
+        "en-toque": b.toque != null ? String(b.toque) : "", "en-desp": b.desprevenido != null ? String(b.desprevenido) : "",
+        "en-fort": b.fort != null ? String(b.fort) : "", "en-ref": b.ref != null ? String(b.ref) : "", "en-vol": b.vol != null ? String(b.vol) : "",
+        "en-perc": b.percepcion != null ? String(b.percepcion) : "",
       });
       avisos = [];
       render();
@@ -997,28 +1057,35 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       const p = S.plantillas[Number(b.dataset.i)];
       if (!p) return;
       bloque = p.bloque ?? null;
-      Object.assign(B, { "en-nombre": p.nombre, "en-pg": p.pg, "en-ca": String(p.ca), "en-mod": String(p.mod), "en-notas": p.notas, "en-tipo": p.aliado ? "aliado" : "enemigo", "en-n": "1", "en-guardar": false });
+      const t = (v: number | null | undefined) => (v == null ? "" : String(v));
+      Object.assign(B, {
+        "en-nombre": p.nombre, "en-pg": p.pg, "en-ca": String(p.ca), "en-mod": String(p.mod), "en-notas": p.notas,
+        "en-tipo": p.companero ? "companero" : p.aliado ? "aliado" : "enemigo", "en-n": "1", "en-guardar": false,
+        "en-toque": t(p.toque ?? p.bloque?.toque), "en-desp": t(p.desprevenido ?? p.bloque?.desprevenido),
+        "en-fort": t(p.fort ?? p.bloque?.fort), "en-ref": t(p.ref ?? p.bloque?.ref), "en-vol": t(p.vol ?? p.bloque?.vol),
+        "en-perc": t(p.percepcion ?? p.bloque?.percepcion),
+      });
       render();
       raiz.querySelector<HTMLInputElement>('[data-foco="en-n"]')?.select();
     },
     borrarPlantilla: (b) => {
       const i = Number(b.dataset.i);
       const p = S.plantillas[i];
-      if (p && confirm(`¿Borrar «${p.nombre}» del bestiario?`)) cambiar(() => { S.plantillas.splice(i, 1); });
+      if (p && confirm(`¿Borrar la ficha de «${p.nombre}»?`)) cambiar(() => { S.plantillas.splice(i, 1); });
     },
     alternarPJ: (b) => alternarPJ(id(b)),
     anadirTodos: () => {
-      const ids = Object.values(S.criaturas).filter((c) => c.pj && c.conFicha && !S.orden.includes(c.id)).map((c) => c.id);
+      const ids = Object.values(S.criaturas).filter((c) => ((c.pj && c.conFicha) || c.companero) && !S.orden.includes(c.id)).map((c) => c.id);
       if (S.activo) { for (const x of ids) alternarPJ(x); return; } // con el combate empezado pide la iniciativa de cada uno
       cambiar(() => { for (const x of ids) { C(x)!.ini = null; S.orden.push(x); } log(`Entran en la mesa: ${ids.map((x) => C(x)!.nombre).join(", ")}.`); });
     },
     leerFichas: () => void leerFichas(true),
     apuntarPG: () => { if (confirm("¿Escribir en cada ficha los PG actuales que tiene la mesa?")) void apuntarPGs(); },
     curarGrupo: () => {
-      if (!confirm("¿Dejar a todos los PJ con sus PG máximos? (En las fichas no cambia hasta que los apuntes.)")) return;
+      if (!confirm("¿Dejar a todos los PJ y compañeros con sus PG máximos? (En las fichas de los PJ no cambia hasta que los apuntes.)")) return;
       cambiar(() => {
-        for (const c of Object.values(S.criaturas)) if (c.pj) { c.pg = c.pgMax; c.noLetal = 0; c.temp = 0; }
-        log("Todos los PJ se curan del todo.");
+        for (const c of Object.values(S.criaturas)) if (fijo(c)) { c.pg = c.pgMax; c.noLetal = 0; c.temp = 0; }
+        log("Todo el grupo se cura del todo.");
       });
     },
     borrarRegistro: () => { if (confirm("¿Vaciar el registro?")) cambiar(() => { S.registro = []; }); },
@@ -1032,7 +1099,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     },
     importar: () => fichero.click(),
     borrarTodo: () => {
-      if (!confirm("¿Empezar de cero? Se borran el combate, el bestiario y el registro (los PJ se vuelven a leer de las fichas). Se puede deshacer mientras no cierres la página.")) return;
+      if (!confirm("¿Empezar de cero? Se borran el combate, los compañeros, las fichas de PNJ y el registro (los PJ se vuelven a leer de sus fichas). Se puede deshacer mientras no cierres la página.")) return;
       cambiar(() => { S = nueva(); sel.clear(); });
       void leerFichas(false);
     },
@@ -1095,7 +1162,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     } else if (t.dataset?.b && t.tagName === "INPUT" && t.type !== "checkbox") {
       k.preventDefault();
       if (t.dataset.b === "pg-cant") aplicarPG("dano");
-      else if (t.dataset.b.startsWith("en-")) anadirEnemigos();
+      else if (t.dataset.b.startsWith("en-")) anadirPNJ();
       else if (t.dataset.b.startsWith("ef-")) anadirEfecto();
     }
   };

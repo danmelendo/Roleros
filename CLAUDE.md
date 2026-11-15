@@ -61,6 +61,7 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - Su estado vive en el `localStorage` del portátil (`roleros:mesa-combate`), no en Supabase.
   - **No tira dados.** Dan tira con dados físicos en la mesa: la mesa solo apunta (iniciativas, daño, estados, efectos y sus rondas). Nada de botones de tirar ataques, salvaciones ni iniciativas.
   - Los PJ se añaden a la mesa a mano desde la pestaña Grupo, que relee las fichas cada vez que se abre.
+  - PNJ con bando: enemigo, aliado de paso o **compañero del grupo** (espadas de alquiler que lleva Dan). Los compañeros, como los PJ, se quedan entre combates con sus PG; el resto se va al terminar. Las fichas de PNJ guardadas también viven solo en el portátil.
   - Los PJ salen de las fichas (`pjsParaCombate`). PG máx., CA, iniciativa, salvaciones, etc. mandan siempre las fichas; los PG actuales solo fuera de combate.
   - Solo escribe en las fichas cuando el máster lo pide, y solo `pg.actual`, con `poner_pg` (nunca un `guardarFicha` desde la mesa).
 - **Ficha = JSON libre, sin motor de reglas de PF1e.** Se edita con formulario, nunca en JSON.
