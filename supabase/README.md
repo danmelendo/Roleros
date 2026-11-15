@@ -1,6 +1,11 @@
 # Puesta en marcha de Supabase
 
-> **Estado (2026-11-15):** proyecto `tfhgtfwcettqgtuhoyoq` (eu-west-2) creado. Pasos 1, 2 y 4 (`.env` local) hechos. Del paso 3, el registro ya está cerrado; **falta crear al máster**. También faltan las Variables de GitHub. La seguridad de anon está probada: no lee ni escribe `fichas`, el revelado filtra bien y el cuestionario valida.
+> **Estado (2026-11-15): todo hecho.**
+> - Proyecto `tfhgtfwcettqgtuhoyoq` (eu-west-2) con la migración aplicada.
+> - Registro cerrado y máster creado: usuario `Dan` en el login, que por debajo es `dan@roleros.local`.
+> - Variables de GitHub puestas y web en <https://danmelendo.github.io/Roleros/>.
+> - Seguridad de anon probada: no lee ni escribe `fichas`, el revelado filtra bien y el cuestionario valida.
+> - Supabase exige un mínimo de 6 caracteres de contraseña.
 >
 > SQL sin contraseña de BD, con la Management API: `npm run sql -- fichero.sql` o `npm run sql -- -e "select 1"`. Necesita `SUPABASE_ACCESS_TOKEN` en `.env`.
 
