@@ -76,6 +76,7 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - Se rellenan rangos, «de clase» y otros; `conTotales()` calcula el total (rangos + atributo + 3 de clase con rangos + otros + `penalizador_armadura`) y **se guarda con la ficha**, para que el jugador vea el total sin tener revelados los atributos. `total = null`: solo entrenada y sin rangos.
   - Artesanía, Interpretar y Profesión admiten copias (`artesania-2`, con `base`).
   - La mesa de combate lee la Percepción de `habilidades.percepcion.total`.
+- **Unidades de Pathfinder: pies, libras, galones y °F**, nunca metros ni kilos, en la app, los datos de reglas y los libros (la velocidad, «30 pies»).
 - **Los objetos no van en la ficha: van en el petate** (`inventario` + `jugadores.oro`). Un objeto con `visible = false` existe, pero el jugador no lo ve.
 - **Los PG se ven siempre.** Revelar un padre revela todo lo que cuelga de él.
 - **Para comparar fichas usa `canon()`**, que ordena las claves. jsonb las devuelve reordenadas, y un `JSON.stringify` a secas dejaba el aviso de "Cambios sin guardar" encendido tras guardar.

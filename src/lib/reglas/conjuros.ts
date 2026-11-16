@@ -20,13 +20,13 @@ Marca arcana|Arcane Mark|uni|ar0|Inscribe tu runa personal, visible o invisible,
 Desangrar|Bleed|nig|ar0 cl0|Una criatura estabilizada vuelve a desangrarse y pierde 1 PG. Vol niega.
 Luces danzantes|Dancing Lights|evo|ar0 br0|Hasta 4 luces como antorchas que mueves a voluntad (1 min).
 Aturdir|Daze|enc|ar0 br0|Un humanoide de 4 DG o menos pierde su siguiente acción. Vol niega.
-Detectar magia|Detect Magic|adv|ar0 br0 cl0 dr0|Detecta auras mágicas en un cono de 18 m (concentración).
+Detectar magia|Detect Magic|adv|ar0 br0 cl0 dr0|Detecta auras mágicas en un cono de 60 pies (concentración).
 Detectar venenos|Detect Poison|adv|ar0 cl0 dr0 pa1 ex1|Detecta veneno en una criatura, un objeto o un área pequeña.
 Perturbar muertos vivientes|Disrupt Undead|nig|ar0|Rayo: 1d6 de daño a un muerto viviente.
 Destello|Flare|evo|ar0 br0 dr0|Deslumbra a una criatura 1 min (−1 a ataque y Percepción). Fort niega.
 Sonido fantasmal|Ghost Sound|ilu|ar0 br0|Sonidos ilusorios: hasta el ruido de 4 humanos por nivel (1 asalto/nivel).
 Luz|Light|evo|ar0 br0 cl0 dr0|Un objeto brilla como una antorcha (10 min/nivel).
-Mano de mago|Mage Hand|tra|ar0 br0|Mueve a distancia un objeto de hasta 2,5 kg.
+Mano de mago|Mage Hand|tra|ar0 br0|Mueve a distancia un objeto de hasta 5 libras.
 Remendar|Mending|tra|ar0 br0 cl0 dr0|Repara pequeños desperfectos de un objeto (1d4 PG).
 Mensaje|Message|tra|ar0 br0|Conversación en susurros a distancia con 1 criatura/nivel (10 min/nivel).
 Abrir/cerrar|Open/Close|tra|ar0 br0|Abre o cierra a distancia una puerta, un cofre o algo parecido.
@@ -38,30 +38,30 @@ Toque de fatiga|Touch of Fatigue|nig|ar0|Toque: el objetivo queda fatigado (1 as
 Saber la dirección|Know Direction|adv|br0 dr0|Sabes dónde está el norte.
 Canción de cuna|Lullaby|enc|br0|Criaturas en un área: −5 a Percepción y −2 contra sueño (concentración + 1 asalto/nivel). Vol niega.
 Invocar instrumento|Summon Instrument|con|br0|Aparece en tus manos un instrumento musical (1 min/nivel).
-Crear agua|Create Water|con|cl0 dr0 pa1|Crea 8 litros de agua potable por nivel.
+Crear agua|Create Water|con|cl0 dr0 pa1|Crea 2 galones de agua potable por nivel.
 Orientación divina|Guidance|adv|cl0 dr0|+1 a una tirada de ataque, salvación o prueba (1 min).
 Purificar comida y bebida|Purify Food and Drink|tra|cl0 dr0|Limpia comida y agua estropeadas o envenenadas.
 Estabilizar|Stabilize|con|cl0 dr0|Una criatura moribunda queda estable.
 Virtud|Virtue|tra|cl0 dr0 pa1|El objetivo gana 1 PG temporal (1 min).
 
-Alarma|Alarm|abj|ar1 br1 ex1|Protege un área de 6 m de radio y avisa si alguien entra (2 h/nivel).
+Alarma|Alarm|abj|ar1 br1 ex1|Protege un área de 20 pies de radio y avisa si alguien entra (2 h/nivel).
 Animar cuerda|Animate Rope|tra|ar1 br1|Una cuerda obedece órdenes sencillas: enredar, atar, anudar.
-Manos ardientes|Burning Hands|evo|ar1|Cono de 4,5 m: 1d4 de fuego por nivel (máx. 5d4). Ref mitad.
+Manos ardientes|Burning Hands|evo|ar1|Cono de 15 pies: 1d4 de fuego por nivel (máx. 5d4). Ref mitad.
 Causar miedo|Cause Fear|nig|ar1 br1 cl1|Una criatura de 5 DG o menos queda asustada 1d4 asaltos; si supera Vol, estremecida 1 asalto.
 Hechizar persona|Charm Person|enc|ar1 br1|Un humanoide te trata como a un amigo (1 h/nivel). Vol niega.
 Toque gélido|Chill Touch|nig|ar1|Un toque por nivel: 1d6 de daño y 1 de Fue (Fort niega la Fue).
-Rociada de color|Color Spray|ilu|ar1|Cono de 4,5 m: deja inconsciente, ciega o aturde según los DG. Vol niega.
+Rociada de color|Color Spray|ilu|ar1|Cono de 15 pies: deja inconsciente, ciega o aturde según los DG. Vol niega.
 Comprensión idiomática|Comprehend Languages|adv|ar1 br1 cl1|Entiendes todos los idiomas, hablados y escritos (10 min/nivel).
-Detectar puertas secretas|Detect Secret Doors|adv|ar1 br1|Revela puertas secretas en un cono de 18 m (concentración).
-Detectar muertos vivientes|Detect Undead|adv|ar1 cl1 pa1|Revela muertos vivientes en un cono de 18 m (concentración).
+Detectar puertas secretas|Detect Secret Doors|adv|ar1 br1|Revela puertas secretas en un cono de 60 pies (concentración).
+Detectar muertos vivientes|Detect Undead|adv|ar1 cl1 pa1|Revela muertos vivientes en un cono de 60 pies (concentración).
 Disfrazarse|Disguise Self|ilu|ar1 br1|Cambias tu aspecto y tu ropa: +10 a Disfrazarse (10 min/nivel).
-Soportar los elementos|Endure Elements|abj|ar1 cl1 dr1 pa1 ex1|Estás a gusto entre −45 °C y 60 °C (24 h).
+Soportar los elementos|Endure Elements|abj|ar1 cl1 dr1 pa1 ex1|Estás a gusto entre −50 °F y 140 °F (24 h).
 Agrandar persona|Enlarge Person|tra|ar1|Un humanoide dobla su tamaño: +2 Fue, −2 Des, −1 a ataque y CA (1 min/nivel).
 Borrar|Erase|tra|ar1 br1|Borra escritura mágica o normal.
-Retirada expeditiva|Expeditious Retreat|tra|ar1 br1|+9 m a tu velocidad base (1 min/nivel).
+Retirada expeditiva|Expeditious Retreat|tra|ar1 br1|+30 pies a tu velocidad base (1 min/nivel).
 Caída de pluma|Feather Fall|tra|ar1 br1|Criaturas u objetos caen despacio y sin daño. Acción inmediata.
-Disco flotante|Floating Disk|evo|ar1|Disco de fuerza que carga 50 kg por nivel y te sigue (1 h/nivel).
-Grasa|Grease|con|ar1 br1|Cuadrado de 3 m o un objeto resbaladizo: Ref o caer.
+Disco flotante|Floating Disk|evo|ar1|Disco de fuerza que carga 100 libras por nivel y te sigue (1 h/nivel).
+Grasa|Grease|con|ar1 br1|Cuadrado de 10 pies o un objeto resbaladizo: Ref o caer.
 Cerradura|Hold Portal|abj|ar1|Atranca una puerta (1 min/nivel).
 Hipnotismo|Hypnotism|enc|ar1 br1|Fascina a 2d4 DG de criaturas (2d4 asaltos). Vol niega.
 Identificar|Identify|adv|ar1 br1|+10 a Conocimiento de conjuros para identificar objetos mágicos (3 asaltos/nivel).
@@ -71,7 +71,7 @@ Aura mágica|Magic Aura|ilu|ar1 br1|Cambia el aura mágica de un objeto (1 día/
 Proyectil mágico|Magic Missile|evo|ar1|1d4+1 de fuerza por proyectil, sin fallo. 1 proyectil más cada 2 niveles (máx. 5).
 Arma mágica|Magic Weapon|tra|ar1 cl1 pa1|Un arma gana +1 de mejora (1 min/nivel).
 Montura|Mount|con|ar1|Invoca un caballo o poni de monta (2 h/nivel).
-Niebla de oscurecimiento|Obscuring Mist|con|ar1 cl1 dr1|Niebla de 6 m de radio a tu alrededor que da ocultación (1 min/nivel).
+Niebla de oscurecimiento|Obscuring Mist|con|ar1 cl1 dr1|Niebla de 20 pies de radio a tu alrededor que da ocultación (1 min/nivel).
 Protección contra el mal / el caos|Protection from Evil / Chaos|abj|ar1 cl1 pa1|+2 a CA y salvaciones contra ese alineamiento; bloquea el control mental (1 min/nivel).
 Protección contra el bien / la ley|Protection from Good / Law|abj|ar1 cl1|+2 a CA y salvaciones contra ese alineamiento; bloquea el control mental (1 min/nivel).
 Rayo de debilitamiento|Ray of Enfeeblement|nig|ar1|Rayo: −1d6 a la Fue, −1 más cada 2 niveles (máx. −5) (1 asalto/nivel). Fort mitad.
@@ -91,13 +91,13 @@ Boca mágica|Magic Mouth|ilu|br1 ar2|Un objeto dice un mensaje cuando se cumple 
 Ocultar objeto|Obscure Object|abj|br1 cl3|Oculta un objeto de la adivinación (8 h).
 Quitar el miedo|Remove Fear|abj|br1 cl1|Suprime el miedo o da +4 contra él a 1 criatura (+1 cada 4 niveles) (10 min).
 Alineamiento indetectable|Undetectable Alignment|abj|br1 cl2|Oculta el alineamiento de una criatura u objeto (24 h).
-Perdición|Bane|enc|cl1|Enemigos a 15 m: −1 a ataque y contra miedo (1 min/nivel). Vol niega.
-Bendecir|Bless|enc|cl1 pa1|Aliados a 15 m: +1 a ataque y contra miedo (1 min/nivel).
+Perdición|Bane|enc|cl1|Enemigos a 50 pies: −1 a ataque y contra miedo (1 min/nivel). Vol niega.
+Bendecir|Bless|enc|cl1 pa1|Aliados a 50 pies: +1 a ataque y contra miedo (1 min/nivel).
 Bendecir agua|Bless Water|tra|cl1 pa1|Convierte un frasco de agua en agua bendita.
 Orden imperiosa|Command|enc|cl1|Una criatura cumple una orden de una palabra durante 1 asalto. Vol niega.
 Maldecir agua|Curse Water|nig|cl1|Convierte un frasco de agua en agua sacrílega.
-Vigilia de la muerte|Deathwatch|nig|cl1|Sabes cómo de herida está cada criatura en un cono de 9 m (10 min/nivel).
-Detectar el mal / el bien / el caos / la ley|Detect Evil / Good / Chaos / Law|adv|cl1|Revela auras de ese alineamiento en un cono de 18 m (concentración).
+Vigilia de la muerte|Deathwatch|nig|cl1|Sabes cómo de herida está cada criatura en un cono de 30 pies (10 min/nivel).
+Detectar el mal / el bien / el caos / la ley|Detect Evil / Good / Chaos / Law|adv|cl1|Revela auras de ese alineamiento en un cono de 60 pies (concentración).
 Favor divino|Divine Favor|evo|cl1 pa1|+1 a ataque y daño por cada 3 niveles (1 min).
 Fatalidad|Doom|nig|cl1|Una criatura queda estremecida (1 min/nivel). Vol niega.
 Escudo entrópico|Entropic Shield|abj|cl1|Los ataques a distancia contra ti fallan un 20 % (1 min/nivel).
@@ -110,11 +110,11 @@ Calmar animales|Calm Animals|enc|dr1 ex1|Calma a 2d4 + nivel DG de animales (1 m
 Hechizar animal|Charm Animal|enc|dr1 ex1|Un animal te trata como a un amigo (1 h/nivel). Vol niega.
 Detectar animales o plantas|Detect Animals or Plants|adv|dr1 ex1|Detecta animales o plantas de un tipo en un cono (concentración).
 Detectar fosos y trampas|Detect Snares and Pits|adv|dr1 ex1|Revela trampas naturales o primitivas en un cono (concentración).
-Enmarañar|Entangle|tra|dr1 ex1|Las plantas atrapan a quien esté en un radio de 12 m (1 min/nivel). Ref o enredado.
+Enmarañar|Entangle|tra|dr1 ex1|Las plantas atrapan a quien esté en un radio de 40 pies (1 min/nivel). Ref o enredado.
 Fuego feérico|Faerie Fire|evo|dr1|Contornea criaturas de luz: anula la ocultación y la invisibilidad (1 min/nivel).
 Bayas benéficas|Goodberry|tra|dr1|2d4 bayas: cada una cura 1 PG y alimenta un día.
 Esconderse de los animales|Hide from Animals|abj|dr1 ex1|Los animales no te perciben (10 min/nivel).
-Zancada prodigiosa|Longstrider|tra|dr1 ex1|+3 m a tu velocidad (1 h/nivel).
+Zancada prodigiosa|Longstrider|tra|dr1 ex1|+10 pies a tu velocidad (1 h/nivel).
 Colmillo mágico|Magic Fang|tra|dr1 ex1|Un arma natural o golpe sin armas gana +1 (1 min/nivel).
 Pasar sin dejar rastro|Pass without Trace|tra|dr1 ex1|1 criatura/nivel no deja huellas (1 h/nivel).
 Producir llama|Produce Flame|evo|dr1|Llama en la mano: 1d6 +1 por nivel (máx. +5) de fuego, al tocar o lanzada (1 min/nivel).
@@ -137,14 +137,14 @@ Fuerza de toro|Bull's Strength|tra|ar2 cl2 dr2|+4 a la Fue (1 min/nivel).
 Gracia felina|Cat's Grace|tra|ar2 br2 dr2|+4 a la Des (1 min/nivel).
 Controlar muertos vivientes|Command Undead|nig|ar2|Un muerto viviente te obedece (1 día/nivel). Vol niega si es inteligente.
 Llama continua|Continual Flame|evo|ar2 cl3|Una llama permanente que no quema.
-Oscuridad|Darkness|evo|ar2 br2 cl2|Un objeto irradia oscuridad en 6 m de radio (1 min/nivel).
-Visión en la oscuridad|Darkvision|tra|ar2|Ves en la oscuridad hasta 18 m (1 h/nivel).
+Oscuridad|Darkness|evo|ar2 br2 cl2|Un objeto irradia oscuridad en 20 pies de radio (1 min/nivel).
+Visión en la oscuridad|Darkvision|tra|ar2|Ves en la oscuridad hasta 60 pies (1 h/nivel).
 Aturdir monstruo|Daze Monster|enc|ar2 br2|Una criatura viva de 6 DG o menos pierde su siguiente acción. Vol niega.
 Detectar pensamientos|Detect Thoughts|adv|ar2 br2|Escuchas los pensamientos superficiales (concentración). Vol niega.
 Esplendor del águila|Eagle's Splendor|tra|ar2 br2 cl2|+4 al Car (1 min/nivel).
 Falsa vida|False Life|nig|ar2|1d10 +1 por nivel (máx. +10) PG temporales (1 h/nivel).
 Esfera flamígera|Flaming Sphere|evo|ar2 dr2|Bola de fuego rodante: 3d6 de fuego (1 asalto/nivel). Ref niega.
-Nube de niebla|Fog Cloud|con|ar2 dr2|Niebla de 6 m de radio que da ocultación (10 min/nivel).
+Nube de niebla|Fog Cloud|con|ar2 dr2|Niebla de 20 pies de radio que da ocultación (10 min/nivel).
 Astucia del zorro|Fox's Cunning|tra|ar2 br2|+4 a la Int (1 min/nivel).
 Toque de necrófago|Ghoul Touch|nig|ar2|Toque: paraliza 1d6+2 asaltos y da náuseas a quien esté cerca. Fort niega.
 Polvo brillante|Glitterdust|con|ar2 br2|Ciega a las criaturas del área y revela a los invisibles. Vol niega la ceguera.
@@ -166,11 +166,11 @@ Rayo abrasador|Scorching Ray|evo|ar2|Rayo: 4d6 de fuego; un rayo más a nivel 7 
 Ver lo invisible|See Invisibility|adv|ar2 br3|Ves criaturas y objetos invisibles (10 min/nivel).
 Estallar|Shatter|evo|ar2 br2 cl2|Vibración sónica que rompe objetos o daña a criaturas cristalinas.
 Mano espectral|Spectral Hand|nig|ar2|Mano fantasmal que entrega tus conjuros de toque, con +2 (1 min/nivel).
-Trepar cual arácnido|Spider Climb|tra|ar2 dr2|Trepas por paredes y techos a 6 m (10 min/nivel).
+Trepar cual arácnido|Spider Climb|tra|ar2 dr2|Trepas por paredes y techos a 20 pies (10 min/nivel).
 Convocar monstruo II|Summon Monster II|con|ar2 br2 cl2|Convoca criaturas extraplanares (1 asalto/nivel).
 Convocar enjambre|Summon Swarm|con|ar2 br2 dr2|Convoca un enjambre de murciélagos, ratas o arañas (concentración + 2 asaltos).
 Toque de idiotez|Touch of Idiocy|enc|ar2|Toque: −1d6 a Int, Sab y Car (10 min/nivel).
-Telaraña|Web|con|ar2|Telarañas de 6 m de radio que atrapan a quien esté dentro (10 min/nivel). Ref.
+Telaraña|Web|con|ar2|Telarañas de 20 pies de radio que atrapan a quien esté dentro (10 min/nivel). Ref.
 Viento susurrante|Whispering Wind|tra|ar2 br2|Lleva un mensaje de 25 palabras o un sonido a un lugar lejano.
 Trance animal|Animal Trance|enc|br2 dr2|Fascina a 2d6 DG de animales (concentración). Vol niega.
 Calmar emociones|Calm Emotions|enc|br2 cl2|Calma a las criaturas y anula furia y miedo (concentración). Vol niega.
@@ -179,8 +179,8 @@ Cautivar|Enthrall|enc|br2 cl2|Cautiva a un público mientras hablas o cantas (ha
 Heroísmo|Heroism|enc|br2 ar3|+2 a ataque, salvaciones y habilidades (10 min/nivel).
 Inmovilizar persona|Hold Person|enc|br2 cl2 ar3|Paraliza a un humanoide (1 asalto/nivel). Vol niega; repite cada asalto.
 Furia|Rage|enc|br2 ar3|+2 a Fue y Con, +1 a Vol, −2 a la CA (concentración + 1 asalto/nivel).
-Silencio|Silence|ilu|br2 cl2|Silencio total en 6 m de radio (1 asalto/nivel).
-Explosión de sonido|Sound Burst|evo|br2 cl2|1d8 sónico en 3 m de radio y aturde 1 asalto. Fort niega el aturdimiento.
+Silencio|Silence|ilu|br2 cl2|Silencio total en 20 pies de radio (1 asalto/nivel).
+Explosión de sonido|Sound Burst|evo|br2 cl2|1d8 sónico en 10 pies de radio y aturde 1 asalto. Fort niega el aturdimiento.
 Sugestión|Suggestion|enc|br2 ar3|El objetivo sigue un curso de acción razonable (1 h/nivel). Vol niega.
 Don de lenguas|Tongues|adv|br2 ar3|Hablas y entiendes cualquier idioma (10 min/nivel).
 Ayuda|Aid|enc|cl2|+1 a ataque y contra miedo, y 1d8 +1 por nivel (máx. +10) PG temporales (1 min/nivel).
@@ -215,26 +215,26 @@ Visión arcana|Arcane Sight|adv|ar3|Ves las auras mágicas y su escuela (1 min/n
 Forma bestial I|Beast Shape I|tra|ar3|Te conviertes en un animal Pequeño o Mediano (1 min/nivel).
 Intermitencia|Blink|tra|ar3 br3|Saltas al plano etéreo y vuelves: 50 % de fallo contra ti (1 asalto/nivel).
 Clariaudiencia/clarividencia|Clairaudience/Clairvoyance|adv|ar3 br3|Ves u oyes a distancia (1 min/nivel).
-Luz del día|Daylight|evo|ar3 cl3 dr3|Luz brillante en 18 m de radio (10 min/nivel).
+Luz del día|Daylight|evo|ar3 cl3 dr3|Luz brillante en 60 pies de radio (10 min/nivel).
 Sueño profundo|Deep Slumber|enc|ar3 br3|Como dormir, pero 10 DG de criaturas. Vol niega.
 Disipar magia|Dispel Magic|abj|ar3 br3 cl3|Anula conjuros o efectos mágicos (prueba de nivel de lanzador).
 Desplazamiento|Displacement|ilu|ar3 br3|Los ataques contra el objetivo fallan un 50 % (1 asalto/nivel).
 Runas explosivas|Explosive Runes|abj|ar3|Runas que estallan al leerlas: 6d6 de fuerza.
-Bola de fuego|Fireball|evo|ar3|Explosión de 6 m de radio: 1d6 de fuego por nivel (máx. 10d6). Ref mitad.
+Bola de fuego|Fireball|evo|ar3|Explosión de 20 pies de radio: 1d6 de fuego por nivel (máx. 10d6). Ref mitad.
 Flecha flamígera|Flame Arrow|tra|ar3|Las municiones hacen +1d6 de fuego (10 min/nivel).
-Volar|Fly|tra|ar3|Vuelas a 18 m (1 min/nivel).
+Volar|Fly|tra|ar3|Vuelas a 60 pies (1 min/nivel).
 Forma gaseosa|Gaseous Form|tra|ar3 br3|Te conviertes en niebla (2 min/nivel).
 Detener muertos vivientes|Halt Undead|nig|ar3|Inmoviliza a 3 muertos vivientes (1 asalto/nivel).
-Prisa|Haste|tra|ar3 br3|1 criatura/nivel: +1 a ataque, CA y Ref, un ataque más y +9 m (1 asalto/nivel).
+Prisa|Haste|tra|ar3 br3|1 criatura/nivel: +1 a ataque, CA y Ref, un ataque más y +30 pies (1 asalto/nivel).
 Escritura ilusoria|Illusory Script|ilu|ar3 br3|Solo el destinatario puede leer el texto.
-Esfera de invisibilidad|Invisibility Sphere|ilu|ar3 br3|Todos a 3 m de ti se vuelven invisibles.
+Esfera de invisibilidad|Invisibility Sphere|ilu|ar3 br3|Todos a 10 pies de ti se vuelven invisibles.
 Afilar|Keen Edge|tra|ar3|Duplica el rango de amenaza de un arma (10 min/nivel).
-Relámpago|Lightning Bolt|evo|ar3|Línea de 36 m: 1d6 de electricidad por nivel (máx. 10d6). Ref mitad.
-Círculo mágico contra el mal / el bien / el caos / la ley|Magic Circle against Evil / Good / Chaos / Law|abj|ar3 cl3|Como la protección, en 3 m de radio (10 min/nivel).
+Relámpago|Lightning Bolt|evo|ar3|Línea de 120 pies: 1d6 de electricidad por nivel (máx. 10d6). Ref mitad.
+Círculo mágico contra el mal / el bien / el caos / la ley|Magic Circle against Evil / Good / Chaos / Law|abj|ar3 cl3|Como la protección, en 10 pies de radio (10 min/nivel).
 Arma mágica mayor|Greater Magic Weapon|tra|ar3|+1 de mejora cada 4 niveles, máx. +5 (1 h/nivel).
 Imagen mayor|Major Image|ilu|ar3 br3|Ilusión con sonido, olor y temperatura (concentración + 3 asaltos).
 Indetectable|Nondetection|abj|ar3|Oculta a una criatura u objeto de la adivinación (1 h/nivel).
-Corcel fantasmal|Phantom Steed|con|ar3 br3|Un caballo mágico que corre 6 m por nivel (1 h/nivel).
+Corcel fantasmal|Phantom Steed|con|ar3 br3|Un caballo mágico que corre 20 pies por nivel (1 h/nivel).
 Protección contra la energía|Protection from Energy|abj|ar3 cl3 dr3|Absorbe 12 puntos por nivel (máx. 120) de un tipo de energía (10 min/nivel).
 Rayo de agotamiento|Ray of Exhaustion|nig|ar3|Rayo: exhausto, o fatigado si supera Fort (1 min/nivel).
 Página secreta|Secret Page|tra|ar3 br3|Disfraza el contenido de una página.
@@ -244,7 +244,7 @@ Tormenta de aguanieve|Sleet Storm|con|ar3 dr3|Aguanieve que tapa la vista y vuel
 Lentitud|Slow|tra|ar3 br3|1 criatura/nivel: una sola acción por asalto y −1 a ataque, CA y Ref (1 asalto/nivel). Vol niega.
 Nube apestosa|Stinking Cloud|con|ar3|Nube que da náuseas (1 asalto/nivel). Fort niega.
 Convocar monstruo III|Summon Monster III|con|ar3 br3 cl3|Convoca criaturas extraplanares (1 asalto/nivel).
-Choza|Tiny Hut|evo|ar3 br3|Refugio de 6 m para 10 criaturas (2 h/nivel).
+Choza|Tiny Hut|evo|ar3 br3|Refugio de 20 pies para 10 criaturas (2 h/nivel).
 Toque vampírico|Vampiric Touch|nig|ar3|Toque: 1d6 cada 2 niveles (máx. 10d6) y ganas esos PG como temporales.
 Respirar bajo el agua|Water Breathing|tra|ar3 cl3 dr3|Los objetivos respiran bajo el agua (2 h/nivel, repartidas).
 Muro de viento|Wind Wall|evo|ar3 cl3 dr3|Muro de viento que desvía flechas y criaturas pequeñas (1 asalto/nivel).
@@ -253,11 +253,11 @@ Imponer maldición|Bestow Curse|nig|cl3|−6 a una característica, −4 a todo,
 Contagio|Contagion|nig|cl3 dr3|Toque: contagia una enfermedad. Fort niega.
 Crear comida y agua|Create Food and Water|con|cl3|Alimenta a 3 humanos (o 1 caballo) por nivel durante un día.
 Curar heridas graves|Cure Serious Wounds|con|cl3 br3|Cura 3d8 +1 por nivel (máx. +15).
-Oscuridad profunda|Deeper Darkness|evo|cl3|Oscuridad de 18 m de radio (10 min/nivel).
+Oscuridad profunda|Deeper Darkness|evo|cl3|Oscuridad de 60 pies de radio (10 min/nivel).
 Glifo custodio|Glyph of Warding|abj|cl3|Inscripción que daña o lanza un conjuro a quien la cruce.
 Mano amiga|Helping Hand|evo|cl3|Una mano fantasmal guía a una criatura hasta ti.
 Infligir heridas graves|Inflict Serious Wounds|nig|cl3|Toque: 3d8 +1 por nivel (máx. +15) de daño. Vol mitad.
-Purgar invisibilidad|Invisibility Purge|evo|cl3|Anula la invisibilidad a 1,5 m por nivel a tu alrededor (1 min/nivel).
+Purgar invisibilidad|Invisibility Purge|evo|cl3|Anula la invisibilidad a 5 pies por nivel a tu alrededor (1 min/nivel).
 Investidura mágica|Magic Vestment|tra|cl3|Una armadura o escudo gana +1 cada 4 niveles (1 h/nivel).
 Fundirse con la piedra|Meld into Stone|tra|cl3 dr3|Te metes dentro de una roca (10 min/nivel).
 Plegaria|Prayer|enc|cl3|Aliados +1 a casi todas las tiradas; enemigos −1 (1 asalto/nivel).

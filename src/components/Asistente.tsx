@@ -65,7 +65,7 @@ export default function Asistente({ datos, setDatos }: { datos: FichaDatos; setD
       {raza && (
         <p className="nota">
           {raza.nombre}: {ATRIBUTOS.filter((a) => modsDe(raza, e.libre)[a]).map((a) => `${CORTO[a]} ${conSigno(modsDe(raza, e.libre)[a]!)}`).join(", ") || "sin modificadores"}
-          {" · "}{raza.tamano === "P" ? "Pequeño" : "Mediano"} · {raza.velocidad} m
+          {" · "}{raza.tamano === "P" ? "Pequeño" : "Mediano"} · {raza.velocidad} pies
         </p>
       )}
       {clase && <p className="nota">{clase.nombre}: d{clase.dg}, {clase.rangos} + Int rangos por nivel, ataque {clase.ataque}, salvaciones buenas: {clase.buenas.map((s) => ({ fort: "Fort", ref: "Ref", vol: "Vol" })[s]).join(", ")}.</p>}

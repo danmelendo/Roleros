@@ -15,7 +15,7 @@ export type Raza = {
   /** +2 a un atributo a elegir (humano, semielfo, semiorco). */
   libre?: boolean;
   tamano: "M" | "P";
-  /** Velocidad base en metros. */
+  /** Velocidad base en pies. */
   velocidad: number;
   /** La armadura y la carga no reducen la velocidad (enano). */
   velocidadFija?: boolean;
@@ -34,23 +34,23 @@ const pequeno: Rasgo = {
 export const RAZAS: Raza[] = [
   {
     clave: "enano", nombre: "Enano", ingles: "Dwarf",
-    mods: { con: 2, sab: 2, car: -2 }, tamano: "M", velocidad: 6, velocidadFija: true,
+    mods: { con: 2, sab: 2, car: -2 }, tamano: "M", velocidad: 20, velocidadFija: true,
     rasgos: [
-      { nombre: "Lento y firme", texto: "Velocidad 6 m, que nunca se reduce por armadura ni carga." },
-      { nombre: "Visión en la oscuridad", texto: "Ve en la oscuridad hasta 18 m (en blanco y negro)." },
+      { nombre: "Lento y firme", texto: "Velocidad 20 pies, que nunca se reduce por armadura ni carga." },
+      { nombre: "Visión en la oscuridad", texto: "Ve en la oscuridad hasta 60 pies (en blanco y negro)." },
       { nombre: "Entrenamiento defensivo", texto: "+4 de esquiva a la CA contra monstruos del subtipo gigante." },
       { nombre: "Codicia", texto: "+2 a Tasación para saber el precio de objetos no mágicos con metales o gemas preciosas." },
       { nombre: "Odio", texto: "+1 a las tiradas de ataque contra humanoides de los subtipos orco y goblinoide." },
       { nombre: "Robusto", texto: "+2 a las salvaciones contra veneno, conjuros y aptitudes sortílegas." },
       { nombre: "Estabilidad", texto: "+4 a la DMC contra embestidas y derribos mientras esté de pie en el suelo." },
-      { nombre: "Afinidad con la piedra", texto: "+2 a Percepción para notar trabajos de cantería inusuales (trampas, puertas ocultas). Tira automáticamente al pasar a 3 m o menos." },
+      { nombre: "Afinidad con la piedra", texto: "+2 a Percepción para notar trabajos de cantería inusuales (trampas, puertas ocultas). Tira automáticamente al pasar a 10 pies o menos." },
       { nombre: "Familiaridad con armas", texto: "Competente con hacha de batalla, pico pesado y martillo de guerra. Las armas «enanas» cuentan como marciales." },
     ],
     idiomas: "Común y enano. Adicionales (por Int alta): gigante, gnomo, goblin, orco, terrano e infracomún.",
   },
   {
     clave: "elfo", nombre: "Elfo", ingles: "Elf",
-    mods: { des: 2, int: 2, con: -2 }, tamano: "M", velocidad: 9,
+    mods: { des: 2, int: 2, con: -2 }, tamano: "M", velocidad: 30,
     habilidades: { percepcion: 2 },
     rasgos: [
       { nombre: "Visión en la penumbra", texto: "Ve el doble de lejos que un humano con poca luz." },
@@ -63,7 +63,7 @@ export const RAZAS: Raza[] = [
   },
   {
     clave: "gnomo", nombre: "Gnomo", ingles: "Gnome",
-    mods: { con: 2, car: 2, fue: -2 }, tamano: "P", velocidad: 6,
+    mods: { con: 2, car: 2, fue: -2 }, tamano: "P", velocidad: 20,
     habilidades: { percepcion: 2, sigilo: 4 },
     rasgos: [
       pequeno,
@@ -80,7 +80,7 @@ export const RAZAS: Raza[] = [
   },
   {
     clave: "mediano", nombre: "Mediano", ingles: "Halfling",
-    mods: { des: 2, car: 2, fue: -2 }, tamano: "P", velocidad: 6, salvaciones: 1,
+    mods: { des: 2, car: 2, fue: -2 }, tamano: "P", velocidad: 20, salvaciones: 1,
     habilidades: { percepcion: 2, acrobacias: 2, trepar: 2, sigilo: 4 },
     rasgos: [
       pequeno,
@@ -94,7 +94,7 @@ export const RAZAS: Raza[] = [
   },
   {
     clave: "semielfo", nombre: "Semielfo", ingles: "Half-elf",
-    mods: {}, libre: true, tamano: "M", velocidad: 9,
+    mods: {}, libre: true, tamano: "M", velocidad: 30,
     habilidades: { percepcion: 2 },
     rasgos: [
       { nombre: "Visión en la penumbra", texto: "Ve el doble de lejos que un humano con poca luz." },
@@ -108,10 +108,10 @@ export const RAZAS: Raza[] = [
   },
   {
     clave: "semiorco", nombre: "Semiorco", ingles: "Half-orc",
-    mods: {}, libre: true, tamano: "M", velocidad: 9,
+    mods: {}, libre: true, tamano: "M", velocidad: 30,
     habilidades: { intimidar: 2 },
     rasgos: [
-      { nombre: "Visión en la oscuridad", texto: "Ve en la oscuridad hasta 18 m (en blanco y negro)." },
+      { nombre: "Visión en la oscuridad", texto: "Ve en la oscuridad hasta 60 pies (en blanco y negro)." },
       { nombre: "Intimidante", texto: "+2 a Intimidar (ya sumado)." },
       { nombre: "Sangre orca", texto: "Cuenta como orco y como humano para todo lo que dependa de la raza." },
       { nombre: "Ferocidad orca", texto: "1/día, al bajar de 0 PG sin morir, puede seguir luchando un asalto más como si estuviera incapacitado." },
@@ -121,7 +121,7 @@ export const RAZAS: Raza[] = [
   },
   {
     clave: "humano", nombre: "Humano", ingles: "Human",
-    mods: {}, libre: true, tamano: "M", velocidad: 9,
+    mods: {}, libre: true, tamano: "M", velocidad: 30,
     rasgos: [
       { nombre: "Dote adicional", texto: "Una dote más a nivel 1." },
       { nombre: "Hábil", texto: "+1 rango de habilidad por nivel." },

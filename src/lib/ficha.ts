@@ -85,7 +85,7 @@ export const PLANTILLA: FichaDatos = {
   deidad: "",
   pg: { max: 10, actual: 10 },
   atributos: { fue: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
-  combate: { ca: 10, toque: 10, desprevenido: 10, ini: 0, bab: 0, bmc: 0, dmc: 10, velocidad: "9 m" },
+  combate: { ca: 10, toque: 10, desprevenido: 10, ini: 0, bab: 0, bmc: 0, dmc: 10, velocidad: "30 pies" },
   salvaciones: { fort: 0, ref: 0, vol: 0 },
   habilidades: {},
   raciales: {},

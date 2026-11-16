@@ -11,7 +11,7 @@ const TIPOS: Record<string, TipoDote> = { C: "combate", G: "general", M: "metam�
 // nombre | inglés | tipo | requisitos | beneficio
 const DATOS = `
 Acrobático|Acrobatic|G||+2 a Acrobacias y Volar (+4 con 10 rangos).
-Pasos acrobáticos|Acrobatic Steps|G|Des 15, Movimientos ágiles|Te mueves por terreno difícil como si fuera normal (hasta 4,5 m por asalto).
+Pasos acrobáticos|Acrobatic Steps|G|Des 15, Movimientos ágiles|Te mueves por terreno difícil como si fuera normal (hasta 15 pies por asalto).
 Maniobras ágiles|Agile Maneuvers|C||Usas el mod. de Des en vez del de Fue para la BMC.
 Alerta|Alertness|G||+2 a Percepción y Averiguar intenciones (+4 con 10 rangos).
 Canalizar alineamiento|Alignment Channel|G|Canalizar energía|Tu canalización cura o daña a ajenos de un alineamiento.
@@ -42,7 +42,7 @@ Fabricar varita|Craft Wand|F|Nivel 5 de lanzador|Fabricas varitas de conjuros de
 Fabricar objeto maravilloso|Craft Wondrous Item|F|Nivel 3 de lanzador|Fabricas objetos maravillosos.
 Soltura con los críticos|Critical Focus|C|Ataque base +9|+4 a las tiradas para confirmar críticos.
 Maestría con los críticos|Critical Mastery|C|Soltura con los críticos, dos dotes de crítico, nivel 14 de guerrero|Aplicas dos efectos de dotes de crítico a la vez.
-Exhibición deslumbrante|Dazzling Display|C|Soltura con un arma|Acción completa: Intimidar a todos los enemigos a 9 m que te vean.
+Exhibición deslumbrante|Dazzling Display|C|Soltura con un arma|Acción completa: Intimidar a todos los enemigos a 30 pies que te vean.
 Puntería mortal|Deadly Aim|C|Des 13, ataque base +1|−1 al ataque a distancia y +2 al daño (cada 4 de ataque base, −1/+2 más).
 Golpe mortal|Deadly Stroke|C|Exhibición deslumbrante, Destrozar defensas, Soltura mayor con un arma, ataque base +11|Contra un enemigo aturdido o desprevenido: doble daño y 1 de Con por desangramiento.
 Crítico ensordecedor|Deafening Critical|C|Soltura con los críticos, ataque base +13|Al confirmar un crítico, el objetivo queda sordo.
@@ -68,13 +68,13 @@ Merced adicional|Extra Mercy|G|Imposición de manos, merced|Una merced más.
 Interpretación adicional|Extra Performance|G|Interpretación de bardo|6 asaltos más de interpretación al día.
 Furia adicional|Extra Rage|G|Furia|6 asaltos más de furia al día.
 Disparo lejano|Far Shot|C|Disparo a bocajarro|Solo −1 por cada incremento de distancia.
-Rápido|Fleet|G||+1,5 m de velocidad con armadura ligera o sin ella.
+Rápido|Fleet|G||+5 pies de velocidad con armadura ligera o sin ella.
 Forjar anillo|Forge Ring|F|Nivel 7 de lanzador|Fabricas anillos mágicos.
 Puño de la gorgona|Gorgon's Fist|C|Impacto sin armas mejorado, Estilo del escorpión, ataque base +6|Golpe sin armas contra un enemigo frenado: queda tambaleante. Fort niega.
 Gran hendedura|Great Cleave|C|Fue 13, Hendedura, Ataque poderoso, ataque base +4|Como Hendedura, pero sigues encadenando ataques mientras aciertes.
 Gran fortaleza|Great Fortitude|G||+2 a Fortaleza.
 Embestida mayor|Greater Bull Rush|C|Embestida mejorada, Ataque poderoso, ataque base +6|+2 a embestir; quien empujas provoca ataques de oportunidad de tus aliados.
-Desarme mayor|Greater Disarm|C|Pericia en combate, Desarme mejorado, ataque base +6|+2 a desarmar; el arma sale volando 4,5 m.
+Desarme mayor|Greater Disarm|C|Pericia en combate, Desarme mejorado, ataque base +6|+2 a desarmar; el arma sale volando 15 pies.
 Finta mayor|Greater Feint|C|Pericia en combate, Finta mejorada, ataque base +6|La finta dura todo un asalto.
 Presa mayor|Greater Grapple|C|Presa mejorada, Impacto sin armas mejorado, ataque base +6|+2 a apresar; mantener la presa es acción de movimiento.
 Arrollar mayor|Greater Overrun|C|Arrollar mejorado, Ataque poderoso, ataque base +6|+2 a arrollar; el derribado provoca ataques de oportunidad.
@@ -115,7 +115,7 @@ Voluntad de hierro|Iron Will|G||+2 a Voluntad.
 Liderazgo|Leadership|G|Nivel 7|Atraes un lugarteniente y seguidores.
 Reflejos rápidos|Lightning Reflexes|G||+2 a Reflejos.
 Postura del relámpago|Lightning Stance|C|Des 17, Esquiva, Postura del viento, ataque base +11|50 % de ocultación si te mueves dos veces o retiras.
-Estocada|Lunge|C|Ataque base +6|+1,5 m de alcance este asalto a cambio de −2 a la CA.
+Estocada|Lunge|C|Ataque base +6|+5 pies de alcance este asalto a cambio de −2 a la CA.
 Aptitud mágica|Magical Aptitude|G||+2 a Conocimiento de conjuros y Usar objeto mágico (+4 con 10 rangos).
 Disparo múltiple|Manyshot|C|Des 17, Disparo a bocajarro, Disparo rápido, ataque base +6|El primer ataque de un ataque completo con arco dispara dos flechas.
 Competencia con arma marcial|Martial Weapon Proficiency|C||Competente con un arma marcial.
@@ -126,11 +126,11 @@ Movilidad|Mobility|C|Des 13, Esquiva|+4 a la CA contra ataques de oportunidad al
 Arquería montada|Mounted Archery|C|Montar 1 rango, Combate montado|Mitad de penalización al disparar a caballo.
 Combate montado|Mounted Combat|C|Montar 1 rango|1/asalto, prueba de Montar para anular un golpe a tu montura.
 Conjuro natural|Natural Spell|G|Sab 13, forma salvaje|Lanzas conjuros en forma salvaje.
-Movimientos ágiles|Nimble Moves|G|Des 13|Te mueves 1,5 m por terreno difícil por asalto como si fuera normal.
+Movimientos ágiles|Nimble Moves|G|Des 13|Te mueves 5 pies por terreno difícil por asalto como si fuera normal.
 Golpe penetrante|Penetrating Strike|C|Soltura con un arma, nivel 12 de guerrero|Con esa arma ignoras 5 de RD.
 Persuasivo|Persuasive|G||+2 a Diplomacia e Intimidar (+4 con 10 rangos).
 Puntería certera|Pinpoint Targeting|C|Des 19, Disparo preciso mejorado, Disparo a bocajarro, Disparo preciso, ataque base +16|Un disparo contra la CA de toque ignorando armadura y escudo.
-Disparo a bocajarro|Point-Blank Shot|C||+1 al ataque y al daño a distancia a 9 m o menos.
+Disparo a bocajarro|Point-Blank Shot|C||+1 al ataque y al daño a distancia a 30 pies o menos.
 Ataque poderoso|Power Attack|C|Fue 13, ataque base +1|−1 al ataque cuerpo a cuerpo y +2 al daño (+3 a dos manos); cada 4 de ataque base, −1/+2 más.
 Disparo preciso|Precise Shot|C|Disparo a bocajarro|Sin −4 por disparar contra quien está en cuerpo a cuerpo.
 Desenvainado rápido|Quick Draw|C|Ataque base +1|Desenvainas como acción gratuita.
@@ -139,7 +139,7 @@ Recarga rápida|Rapid Reload|C|Competencia con el arma (ballesta)|Recargar la ba
 Disparo rápido|Rapid Shot|C|Des 13, Disparo a bocajarro|Un ataque a distancia más, todos con −2.
 Ataque al galope|Ride-By Attack|C|Montar 1 rango, Combate montado|Cargas a caballo y sigues moviéndote después.
 Correr|Run|G||Corres a ×5 la velocidad; +4 a Acrobacias para saltar con carrerilla.
-Estilo del escorpión|Scorpion Style|C|Impacto sin armas mejorado|Golpe sin armas: la velocidad del objetivo baja a 1,5 m. Fort niega.
+Estilo del escorpión|Scorpion Style|C|Impacto sin armas mejorado|Golpe sin armas: la velocidad del objetivo baja a 5 pies. Fort niega.
 Escribir pergamino|Scribe Scroll|F|Nivel 1 de lanzador|Fabricas pergaminos.
 Canalizar selectivo|Selective Channeling|G|Car 13, Canalizar energía|Excluyes de tu canalización a tantos objetivos como tu mod. de Car.
 Autosuficiente|Self-Sufficient|G||+2 a Sanar y Supervivencia (+4 con 10 rangos).
@@ -162,7 +162,7 @@ Ataque elástico|Spring Attack|C|Des 13, Esquiva, Movilidad, ataque base +4|Te m
 Crítico tambaleante|Staggering Critical|C|Soltura con los críticos, ataque base +13|Al confirmar un crítico, el objetivo queda tambaleante 1d4+1 asaltos.
 Mantenerse firme|Stand Still|C|Reflejos de combate|Con un ataque de oportunidad, frenas en seco al que pasa por tu lado.
 Sigiloso|Stealthy|G||+2 a Escapismo y Sigilo (+4 con 10 rangos).
-Avanzar|Step Up|C|Ataque base +1|Si un enemigo adyacente se aparta 1,5 m, le sigues.
+Avanzar|Step Up|C|Ataque base +1|Si un enemigo adyacente se aparta 5 pies, le sigues.
 Conjuro inmóvil|Still Spell|M||Lanzas sin componente somático. Ocupa +1 nivel.
 Contraatacar|Strike Back|C|Ataque base +11|Preparas una acción para atacar al que te golpea desde fuera de tu alcance.
 Crítico aturdidor|Stunning Critical|C|Soltura con los críticos, Crítico tambaleante, ataque base +17|Al confirmar un crítico, el objetivo queda aturdido 1d4 asaltos.
@@ -183,7 +183,7 @@ Soltura con un arma|Weapon Focus|C|Competencia con el arma, ataque base +1|+1 al
 Especialización en un arma|Weapon Specialization|C|Soltura con el arma, nivel 4 de guerrero|+2 al daño con un arma.
 Ataque en remolino|Whirlwind Attack|C|Des 13, Int 13, Pericia en combate, Esquiva, Movilidad, Ataque elástico, ataque base +4|Acción completa: un ataque contra cada enemigo a tu alcance.
 Ampliar conjuro|Widen Spell|M||Duplica el área del conjuro. Ocupa +3 niveles.
-Postura del viento|Wind Stance|C|Des 15, Esquiva, ataque base +6|20 % de ocultación contra ataques a distancia si te mueves más de 1,5 m.
+Postura del viento|Wind Stance|C|Des 15, Esquiva, ataque base +6|20 % de ocultación contra ataques a distancia si te mueves más de 5 pies.
 Competencia con arma exótica|Exotic Weapon Proficiency|C|Ataque base +1|Competente con un arma exótica.
 Competencia con arma sencilla|Simple Weapon Proficiency|C||Competente con todas las armas sencillas.
 `;

@@ -30,7 +30,7 @@ export type Clase = {
   habilidades: string[];
   rasgos: Rasgo[];
   magia?: Magia;
-  /** Nivel en el que gana +3 m de movimiento rápido. */
+  /** Nivel en el que gana +10 pies de movimiento rápido. */
   rapido?: number;
 };
 
@@ -42,7 +42,7 @@ export const CLASES: Clase[] = [
     clave: "barbaro", nombre: "Bárbaro", ingles: "Barbarian", dg: 12, rangos: 4, ataque: "alto", buenas: ["fort"], rapido: 1,
     habilidades: ["acrobacias", "trepar", "artesania", "trato-animales", "intimidar", ...con("naturaleza"), "percepcion", "montar", "supervivencia", "nadar"],
     rasgos: [
-      { nivel: 1, nombre: "Movimiento rápido", texto: "+3 m a la velocidad con armadura ligera o intermedia (ya sumado)." },
+      { nivel: 1, nombre: "Movimiento rápido", texto: "+10 pies a la velocidad con armadura ligera o intermedia (ya sumado)." },
       { nivel: 1, nombre: "Furia", texto: "Asaltos al día: 4 + mod. de Con, +2 por nivel a partir del 2. En furia: +4 Fue, +4 Con, +2 a Voluntad, −2 a la CA; no puede usar habilidades de concentración. Al acabar, fatigado el doble de asaltos." },
       { nivel: 2, nombre: "Poder de furia", texto: "Elige un poder de furia (uno más a nivel 4)." },
       { nivel: 2, nombre: "Esquiva asombrosa", texto: "No queda desprevenido ni pierde la Des a la CA aunque le pillen por sorpresa." },
@@ -75,7 +75,7 @@ export const CLASES: Clase[] = [
     habilidades: ["tasacion", "artesania", "diplomacia", "sanar", ...con("arcano", "historia", "nobleza", "planos", "religion"), "linguistica", "profesion", "averiguar-intenciones", "conocimiento-conjuros"],
     rasgos: [
       { nivel: 1, nombre: "Aura", texto: "Aura del alineamiento de su dios, que detectan los conjuros de detectar." },
-      { nivel: 1, nombre: "Canalizar energía 1d6", texto: "3 + mod. de Car veces al día: cura (o daña a muertos vivientes) 1d6 en un radio de 9 m. Sube a 2d6 a nivel 3 y 3d6 a nivel 5. Vol mitad (CD 10 + ½ nivel + Car)." },
+      { nivel: 1, nombre: "Canalizar energía 1d6", texto: "3 + mod. de Car veces al día: cura (o daña a muertos vivientes) 1d6 en un radio de 30 pies. Sube a 2d6 a nivel 3 y 3d6 a nivel 5. Vol mitad (CD 10 + ½ nivel + Car)." },
       { nivel: 1, nombre: "Dominios", texto: "Elige dos dominios de su dios: dan poderes y un conjuro de dominio extra por nivel." },
       { nivel: 1, nombre: "Oraciones", texto: "Conjuros de nivel 0 que puede lanzar a voluntad." },
       { nivel: 1, nombre: "Lanzamiento espontáneo", texto: "Cambia un conjuro preparado por un curar (o infligir) del mismo nivel." },
@@ -123,11 +123,11 @@ export const CLASES: Clase[] = [
       { nivel: 1, nombre: "Puñetazo aturdidor", texto: "Dote adicional: veces al día = nivel. Fort (CD 10 + ½ nivel + Sab) o aturdido 1 asalto." },
       { nivel: 1, nombre: "Dote adicional", texto: "Una dote de la lista del monje (otra a nivel 2)." },
       { nivel: 2, nombre: "Evasión", texto: "Si supera Reflejos contra un efecto de mitad de daño, no recibe daño." },
-      { nivel: 3, nombre: "Movimiento rápido", texto: "+3 m a la velocidad sin armadura (ya sumado)." },
+      { nivel: 3, nombre: "Movimiento rápido", texto: "+10 pies a la velocidad sin armadura (ya sumado)." },
       { nivel: 3, nombre: "Entrenamiento en maniobras", texto: "Usa su nivel de monje como ataque base para la BMC (ya sumado)." },
       { nivel: 3, nombre: "Mente en calma", texto: "+2 a las salvaciones contra encantamientos." },
-      { nivel: 4, nombre: "Reserva de ki", texto: "½ nivel + mod. de Sab puntos. Sus golpes cuentan como mágicos. Gastar 1: un ataque más en ráfaga, +4 a la CA 1 asalto o +6 m." },
-      { nivel: 4, nombre: "Caída lenta 6 m", texto: "Con una pared a mano, cae 6 m menos." },
+      { nivel: 4, nombre: "Reserva de ki", texto: "½ nivel + mod. de Sab puntos. Sus golpes cuentan como mágicos. Gastar 1: un ataque más en ráfaga, +4 a la CA 1 asalto o +20 pies." },
+      { nivel: 4, nombre: "Caída lenta 20 pies", texto: "Con una pared a mano, cae 20 pies menos." },
       { nivel: 5, nombre: "Salto alto", texto: "+nivel a Acrobacias para saltar; gastando 1 de ki, +20 en un salto." },
       { nivel: 5, nombre: "Pureza corporal", texto: "Inmune a las enfermedades." },
     ],
@@ -141,7 +141,7 @@ export const CLASES: Clase[] = [
       { nivel: 1, nombre: "Castigar el mal 1/día", texto: "Contra un enemigo malvado: + mod. de Car al ataque, + nivel al daño (doble a muertos vivientes, ajenos malignos y dragones) y + mod. de Car de desvío a la CA. 2/día a nivel 4." },
       { nivel: 2, nombre: "Gracia divina", texto: "Suma su mod. de Car a todas las salvaciones (ya sumado)." },
       { nivel: 2, nombre: "Imposición de manos", texto: "½ nivel + mod. de Car veces al día: cura 1d6 por cada 2 niveles (acción rápida si es a sí mismo)." },
-      { nivel: 3, nombre: "Aura de valor", texto: "Inmune al miedo; aliados a 3 m, +4 contra miedo." },
+      { nivel: 3, nombre: "Aura de valor", texto: "Inmune al miedo; aliados a 10 pies, +4 contra miedo." },
       { nivel: 3, nombre: "Salud divina", texto: "Inmune a las enfermedades." },
       { nivel: 3, nombre: "Merced", texto: "La imposición de manos además quita una condición (fatigado, estremecido o indispuesto)." },
       { nivel: 4, nombre: "Canalizar energía positiva", texto: "Gastando dos usos de imposición de manos, canaliza como un clérigo de nivel −3." },

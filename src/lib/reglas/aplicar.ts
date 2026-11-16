@@ -91,9 +91,9 @@ export function aplicar(datos: FichaDatos, e: Eleccion): { datos: FichaDatos; ca
       cambios.push(`Habilidades: ${Object.entries(raza.habilidades).map(([k, v]) => `${HABILIDADES.find((h) => h.clave === k)?.nombre} ${conSigno(v)}`).join(", ")}.`);
     }
 
-    const vel = raza.velocidad + (clase?.rapido && nivel >= clase.rapido ? 3 : 0);
-    d.combate = { ...obj(d.combate), velocidad: `${vel} m` };
-    cambios.push(`Velocidad ${vel} m.`);
+    const vel = raza.velocidad + (clase?.rapido && nivel >= clase.rapido ? 10 : 0);
+    d.combate = { ...obj(d.combate), velocidad: `${vel} pies` };
+    cambios.push(`Velocidad ${vel} pies.`);
   }
 
   /* -------------------------------------------------------------- clase -- */

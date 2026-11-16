@@ -154,7 +154,7 @@ export function leerBloque(entrada: string): Bloque | null {
     vol: sv ? Number(sv[3]) : null,
     bmc: num(primero(t, /\b(?:CMB|BMC)\s+([+-]\d+)/) ?? undefined),
     dmc: num(primero(t, /\b(?:CMD|DMC)\s+(\d+)/) ?? undefined),
-    velocidad: linea(/^(?:Speed|Velocidad)\s+(.+)$/i),
+    velocidad: linea(/^(?:Speed|Velocidad)\s+(.+)$/i)?.replace(/\bft\.?/g, "pies") ?? null,
     defensas,
     especiales: linea(/^(?:Special Attacks|Ataques especiales)\s+(.+)$/i),
     ataques: [
