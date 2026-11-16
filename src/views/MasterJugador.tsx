@@ -34,6 +34,7 @@ import { Colores } from "../components/Colores";
 /* Asistente de raza/clase y selector de conjuros: se cargan aparte, solo en el biombo. */
 const Asistente = lazy(() => import("../components/Asistente"));
 const SelectorConjuros = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorConjuros })));
+const SelectorEquipo = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorEquipo })));
 const SelectorDotes = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorDotes })));
 
 /* ------------------------------------------------------------ utilidades -- */
@@ -389,7 +390,7 @@ function Editor({
         );
       })}
 
-      <PetateMaster jugadorId={jugadorId} oroActual={oroJugador} />
+      <PetateMaster jugadorId={jugadorId} oroActual={oroJugador} raza={datos.raza} />
 
       {huerfanas.length > 0 && (
         <section className="pagina">
@@ -578,7 +579,7 @@ function FilaItem({ it, onCambio, onQuitar, ocupado }: {
   );
 }
 
-function PetateMaster({ jugadorId, oroActual }: { jugadorId: string; oroActual: number }) {
+function PetateMaster({ jugadorId, oroActual, raza }: { jugadorId: string; oroActual: number; raza: unknown }) {
   const qc = useQueryClient();
   const inv = useQuery({ queryKey: ["inventario", jugadorId], queryFn: () => inventarioDe(jugadorId) });
   const [oroTxt, setOroTxt] = useState(String(oroActual));
@@ -634,6 +635,17 @@ function PetateMaster({ jugadorId, oroActual }: { jugadorId: string; oroActual: 
         <input className="campo" aria-label="Objeto nuevo" placeholder="Objeto nuevo" value={nuevo} onChange={(e) => setNuevo(e.target.value)} />
         <button className="boton chico secundario" disabled={!nuevo.trim() || cambio.isPending}>+ Añadir</button>
       </form>
+      <Suspense fallback={null}>
+        <SelectorEquipo
+          pequeno={typeof raza === "string" && /^(gnom|median)/i.test(raza.trim())}
+          oro={oroActual}
+          ocupado={cambio.isPending}
+          onAnadir={(e) => cambio.mutate(async () => {
+            await anadirItem(jugadorId, e.nombre, 1, e.notas, e.visible);
+            if (e.cobrar) await ponerOro(jugadorId, Math.round((oroActual - e.precio) * 100) / 100);
+          })}
+        />
+      </Suspense>
       <p className="nota">Ojo cerrado: el objeto existe pero el jugador no lo ve. Tiene {oro(oroActual)}.</p>
       {cambio.error && <p className="error">{cambio.error.message}</p>}
     </section>

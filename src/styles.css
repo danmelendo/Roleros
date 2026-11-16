@@ -439,6 +439,9 @@ form.pagina > .boton { align-self: flex-start; }
 .selector-conjuros .campo.corto { flex: 0 0 96px; }
 .selector-conjuros .nota { margin: 0 0 6px; }
 .selector-conjuros .detalle-dote { font-size: 0.94rem; }
+.selector-conjuros .casilla-linea { display: inline-flex; align-items: center; gap: 4px; font-size: 0.94rem; white-space: nowrap; }
+.selector-conjuros .propiedades { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 8px; }
+.selector-conjuros .propiedades small { color: var(--tinta-tenue); }
 
 /* Habilidades (biombo): nombre · clase · rangos · otros · total · ojo */
 .hab-cabecera { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -466,13 +469,13 @@ form.pagina > .boton { align-self: flex-start; }
   vertical-align: 1px; cursor: help;
 }
 .hab-clase { justify-self: center; width: 20px; height: 20px; margin: 0; }
-.hab-clase, .asistente .opciones input[type="checkbox"] {
+.hab-clase, .asistente .opciones input[type="checkbox"], .selector-conjuros input[type="checkbox"] {
   width: 18px; height: 18px;
   appearance: none; -webkit-appearance: none;
   background: rgba(255, 252, 242, 0.55); border: 1px solid var(--borde); border-radius: 2px;
   cursor: pointer;
 }
-.hab-clase:checked, .asistente .opciones input[type="checkbox"]:checked {
+.hab-clase:checked, .asistente .opciones input[type="checkbox"]:checked, .selector-conjuros input[type="checkbox"]:checked {
   background: var(--rubrica) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3.2L15 7' fill='none' stroke='%23f6ecd2' stroke-width='2.4'/%3E%3C/svg%3E") center / 100% no-repeat;
   border-color: var(--rubrica);
 }

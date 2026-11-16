@@ -33,8 +33,8 @@ src/
   lib/formato.ts        tipos de acción, oro, fechas relativas
   lib/sesion.ts         useSesion(): sesión + es_master()
   lib/jugador.ts        jugador elegido en localStorage
-  lib/reglas/           datos del Manual básico de PF1e (razas, clases 1-5, conjuros 0-3, dotes) y aplicar() del asistente
-  components/Asistente.tsx  asistente de raza/clase y selectores de conjuros y dotes (lazy: solo se descarga en el biombo)
+  lib/reglas/           datos del Manual básico de PF1e (razas, clases 1-5, conjuros 0-3, dotes, equipo) y aplicar() del asistente
+  components/Asistente.tsx  asistente de raza/clase y selectores de conjuros, dotes y equipo (lazy: solo se descarga en el biombo)
   components/Ojo.tsx    interruptor de revelado
   components/Retrato.tsx  retrato redondo; reduce la foto en el cliente antes de subirla
   views/Jugador.tsx     cabecera y pestañas del jugador (+ punto de "el máster te ha contestado")
@@ -92,6 +92,41 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
 - **Fuentes servidas desde la app** (`@fontsource`, subconjunto latin): Cinzel (títulos, etiquetas y botones), EB Garamond (texto) y UnifrakturMaguntia (solo el título y la capitular del trasfondo). No metas Google Fonts por URL.
 - **Márgenes seguros:** `.shell` deja `--hueco-abajo` (zona segura + 88 px) bajo el último botón, porque la barra flotante de Safari y la de gestos de Android tapan la página sin contar como zona segura. Lo fijo abajo usa `var(--sb)`.
 - **Todas las tarjetas pesan lo mismo:** lo no revelado se marca con "?" dentro, sin apagar la tarjeta. Dan pidió que ninguna destaque sobre las demás y que todo sea compacto.
+
+## Estado (2026-11-16) y por dónde seguir
+
+**Hecho**
+- **Jugador:** cuestionario, ficha (solo lo revelado), petate, acciones entre sesiones, diario y retrato.
+- **Biombo:**
+  - Fichas con formulario, ojo de revelado y la tabla de las 35 habilidades.
+  - Asistente PF1e: raza y clase, conjuros y dotes.
+  - Petate con oro y equipo.
+  - Cola de acciones, con limpieza del registro.
+- **Mesa de combate** (`/master/combate`): iniciativa, PG, estados y efectos con rondas, PNJ con bando, compañeros del grupo, bloques de d20pfsrd y equipo a las notas del PNJ.
+- **Datos de reglas** (`src/lib/reglas/`, Manual básico, en pies y libras), que se cargan aparte y solo en el biombo y la mesa:
+  - 7 razas;
+  - 11 clases, niveles 1-5;
+  - 262 conjuros de nivel 0-3;
+  - 176 dotes;
+  - 75 armas y 18 armaduras y escudos;
+  - 37 propiedades mágicas (bonificador +1/+2 y las de precio fijo baratas);
+  - 82 objetos maravillosos de NL ≤ 7.
+
+**Pendiente o ideas, por orden de utilidad**
+1. **Cartas:** las tablas `cartas` y `cartas_jugador` ya existen, pero no tienen interfaz.
+2. **Diarios de los jugadores en el biombo:** hoy solo los ve cada jugador.
+3. **Aligerar la app:**
+   - El trozo principal pesa unos 710 KB (212 KB comprimido).
+   - Las rutas del biombo (`/master/*`) y la mesa podrían cargarse en diferido, como ya se hace con los datos de reglas, para que el móvil del jugador baje menos.
+4. **Más reglas, si la campaña pasa de nivel 5:**
+   - clases hasta el nivel 20;
+   - conjuros de nivel 4 o más;
+   - objetos maravillosos de NL mayor;
+   - anillos, varitas, pociones, pergaminos y equipo mundano (cuerdas, raciones…), que hoy no están.
+5. **Revisar nombres:** los nombres en español de algunos conjuros, dotes y objetos son traducción propia. Al lado va el inglés para buscarlos en d20pfsrd.
+6. **Avisos y requisitos:**
+   - El asistente no comprueba los requisitos de las dotes.
+   - El petate no avisa del peso que se carga.
 
 ## Comandos
 

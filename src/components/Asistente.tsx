@@ -5,6 +5,9 @@ import { aplicar, eleccionInicial, modsDe, type Eleccion } from "../lib/reglas/a
 import { CLASES, claseDe, type ListaConjuros } from "../lib/reglas/clases";
 import { conjurosDe } from "../lib/reglas/conjuros";
 import { DOTES, slug, type TipoDote } from "../lib/reglas/dotes";
+import {
+  ARMADURAS, ARMAS, describirArma, describirArmadura, describirMaravilloso, MARAVILLOSOS, po, propiedadesPara, type Calidad,
+} from "../lib/reglas/equipo";
 import { RAZAS, razaDe } from "../lib/reglas/razas";
 
 /* Se carga aparte (lazy) desde el biombo: los datos de reglas no viajan al
@@ -221,6 +224,115 @@ export function SelectorDotes({ datos, poner }: { datos: FichaDatos; poner: (rut
             <b>{d.tipo[0].toUpperCase() + d.tipo.slice(1)}.</b> {d.requisitos ? `Requisitos: ${d.requisitos}. ` : "Sin requisitos. "}{d.texto} <i>({d.ingles})</i>
           </p>
           <input className="campo detalle-dote" aria-label="Especificar" placeholder="Especificar si hace falta: arma, habilidad, escuela… (opcional)" value={detalle} onChange={(ev) => setDetalle(ev.target.value)} />
+        </>
+      )}
+    </div>
+  );
+}
+
+const CATEGORIAS = [
+  { clave: "sencilla", nombre: "Armas sencillas" },
+  { clave: "marcial", nombre: "Armas marciales" },
+  { clave: "exótica", nombre: "Armas exóticas" },
+  { clave: "armadura", nombre: "Armaduras" },
+  { clave: "escudo", nombre: "Escudos" },
+  { clave: "maravilloso", nombre: "Objetos maravillosos (NL ≤ 7)" },
+] as const;
+type Categoria = (typeof CATEGORIAS)[number]["clave"];
+
+export type EquipoElegido = { nombre: string; notas: string; precio: number; visible: boolean; cobrar: boolean };
+
+/** Armas, armaduras, escudos y objetos maravillosos del Manual básico para el petate. */
+export function SelectorEquipo({ pequeno, oro, ocupado, onAnadir }: {
+  pequeno: boolean; oro: number; ocupado: boolean; onAnadir: (e: EquipoElegido) => void;
+}) {
+  const [cat, setCat] = useState<Categoria>("marcial");
+  const [clave, setClave] = useState("");
+  const [calidad, setCalidad] = useState<Calidad>("normal");
+  const [props, setProps] = useState<string[]>([]);
+  const [peq, setPeq] = useState(pequeno);
+  const [visible, setVisible] = useState(true);
+  const [cobrar, setCobrar] = useState(false);
+
+  const armas = ARMAS.filter((a) => a.competencia === cat);
+  const armaduras = ARMADURAS.filter((a) => (cat === "escudo" ? a.clase === "escudo" : a.clase !== "escudo"));
+  const arma = armas.find((a) => a.clave === clave);
+  const armadura = cat === "armadura" || cat === "escudo" ? armaduras.find((a) => a.clave === clave) : undefined;
+  const maravilloso = cat === "maravilloso" ? MARAVILLOSOS.find((m) => m.clave === clave) : undefined;
+  const base = arma ?? armadura;
+  const posibles = base ? propiedadesPara(base) : [];
+  const elegidas = posibles.filter((p) => props.includes(p.clave));
+  const desc = arma ? describirArma({ arma, calidad, props: elegidas, pequeno: peq })
+    : armadura ? describirArmadura({ armadura, calidad, props: elegidas })
+    : maravilloso ? describirMaravilloso(maravilloso) : null;
+  const equivalente = typeof calidad === "number" ? calidad + elegidas.reduce((s, p) => s + p.bono, 0) : 0;
+  const cambiarCat = (c: Categoria) => { setCat(c); setClave(""); setCalidad("normal"); setProps([]); };
+
+  return (
+    <div className="selector-conjuros">
+      <span className="etiqueta">Añadir del Manual básico</span>
+      <div className="fila">
+        <select className="campo" aria-label="Categoría" value={cat} onChange={(e) => cambiarCat(e.target.value as Categoria)}>
+          {CATEGORIAS.map((c) => <option key={c.clave} value={c.clave}>{c.nombre}</option>)}
+        </select>
+      </div>
+      <div className="fila">
+        <select className="campo" aria-label="Objeto" value={clave} onChange={(e) => { setClave(e.target.value); setProps([]); }}>
+          <option value="">— elige —</option>
+          {cat === "maravilloso"
+            ? MARAVILLOSOS.map((m) => <option key={m.clave} value={m.clave}>{m.nombre} · {po(m.precio)}</option>)
+            : cat === "armadura" || cat === "escudo"
+              ? armaduras.map((a) => <option key={a.clave} value={a.clave}>{a.nombre} · +{a.bono} · {po(a.precio)}</option>)
+              : ["desarmado", "ligera", "una mano", "dos manos", "distancia", "munición"].map((u) => {
+                  const del = armas.filter((a) => a.uso === u);
+                  return del.length ? (
+                    <optgroup key={u} label={u[0].toUpperCase() + u.slice(1)}>
+                      {del.map((a) => <option key={a.clave} value={a.clave}>{a.nombre} · {a.danoM} · {po(a.precio)}</option>)}
+                    </optgroup>
+                  ) : null;
+                })}
+        </select>
+      </div>
+      {base && (
+        <div className="fila">
+          <select className="campo corto" aria-label="Calidad" value={String(calidad)} onChange={(e) => {
+            const v = e.target.value;
+            setCalidad(v === "1" ? 1 : v === "2" ? 2 : (v as Calidad));
+          }}>
+            <option value="normal">Normal</option>
+            <option value="gc">Gran calidad</option>
+            <option value="1">Mágica +1</option>
+            <option value="2">Mágica +2</option>
+          </select>
+          {arma && <label className="casilla-linea"><input type="checkbox" checked={peq} onChange={(e) => setPeq(e.target.checked)} /> Tamaño Pequeño</label>}
+        </div>
+      )}
+      {base && typeof calidad === "number" && (
+        <div className="propiedades">
+          {posibles.map((p) => (
+            <label key={p.clave} className="casilla-linea" title={p.texto}>
+              <input type="checkbox" checked={props.includes(p.clave)} onChange={(e) => setProps((xs) => (e.target.checked ? [...xs, p.clave] : xs.filter((x) => x !== p.clave)))} />
+              {" "}{p.nombre} <small>{p.bono ? `+${p.bono}` : po(p.precio)}</small>
+            </label>
+          ))}
+        </div>
+      )}
+      {desc && (
+        <>
+          <p className="nota"><b>{desc.nombre}</b>{equivalente > 2 ? ` (equivale a +${equivalente})` : ""}. {desc.notas}</p>
+          <div className="fila">
+            <label className="casilla-linea"><input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} /> Lo ve el jugador</label>
+            <label className="casilla-linea"><input type="checkbox" checked={cobrar} onChange={(e) => setCobrar(e.target.checked)} /> Cobrar {po(desc.precio)}{cobrar && desc.precio > oro ? " (no le llega)" : ""}</label>
+          </div>
+          <div className="fila">
+            <span />
+            <button type="button" className="boton chico" disabled={ocupado || (cobrar && desc.precio > oro)} onClick={() => {
+              onAnadir({ nombre: desc.nombre, notas: desc.notas, precio: desc.precio, visible, cobrar });
+              setClave(""); setProps([]); setCalidad("normal");
+            }}>
+              Añadir al petate
+            </button>
+          </div>
         </>
       )}
     </div>

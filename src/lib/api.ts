@@ -126,8 +126,8 @@ export async function inventarioDe(jugadorId: string): Promise<ItemInventario[]>
   return ok(await supabase.from("inventario").select("*").eq("jugador_id", jugadorId).order("item"));
 }
 
-export async function anadirItem(jugadorId: string, item: string, cantidad: number): Promise<void> {
-  ok(await supabase.from("inventario").insert({ jugador_id: jugadorId, item, cantidad, visible: true }));
+export async function anadirItem(jugadorId: string, item: string, cantidad: number, notas: string | null = null, visible = true): Promise<void> {
+  ok(await supabase.from("inventario").insert({ jugador_id: jugadorId, item, cantidad, notas, visible }));
 }
 
 export async function cambiarItem(id: number, cambios: Partial<Pick<ItemInventario, "item" | "cantidad" | "notas" | "visible">>): Promise<void> {

@@ -1,6 +1,8 @@
 import { DESC_ESTADO, ESTADOS, PRESETS } from "./datos";
 import { leerBloque, type Ataque, type Bloque } from "./bloque";
 import estilos from "./mesa.css?inline";
+// El equipo del Manual básico se carga aparte, al abrir la pestaña PNJ (no viaja al móvil de los jugadores).
+type Equipo = typeof import("../lib/reglas/equipo");
 
 /* =============================================================================
    Mesa de combate del máster (Pathfinder 1e): iniciativa, PG, estados y
@@ -135,6 +137,50 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   raiz.innerHTML = `<style>${estilos}</style><div id="app"></div><dialog id="dlg"></dialog><input type="file" id="fichero" accept=".json,application/json" hidden>`;
   const app = raiz.getElementById("app")!;
   const dlg = raiz.getElementById("dlg") as HTMLDialogElement;
+
+  /* ------------------------------------------------------------ equipo -- */
+  let EQ: Equipo | null = null;
+  let cargandoEq = false;
+  const CALIDADES: [string, string][] = [["normal", "Normal"], ["gc", "Gran calidad"], ["1", "+1"], ["2", "+2"]];
+
+  /** Desplegable de armas, armaduras, escudos y objetos maravillosos. attrs: data-b="…" o name="…". */
+  function selectorEquipo(attrObjeto: string, attrCalidad: string, accion: string, objeto = "", calidad = "normal") {
+    if (!EQ) {
+      if (!cargandoEq) {
+        cargandoEq = true;
+        void import("../lib/reglas/equipo").then((m) => { EQ = m; if (vivo) render(); });
+      }
+      return `<label class="ancho4">Equipo<select disabled><option>Cargando el equipo…</option></select></label>`;
+    }
+    const opt = (v: string, t: string) => `<option value="${esc(v)}"${v === objeto ? " selected" : ""}>${esc(t)}</option>`;
+    const grupo = (t: string, ops: string[]) => (ops.length ? `<optgroup label="${esc(t)}">${ops.join("")}</optgroup>` : "");
+    const armas = (c: string) => EQ!.ARMAS.filter((a) => a.competencia === c && a.uso !== "munición").map((a) => opt(`arma:${a.clave}`, `${a.nombre} (${a.danoM}${a.critico !== "×2" ? `, ${a.critico}` : ""})`));
+    return `<label class="ancho2">Equipo<select ${attrObjeto}><option value="">—</option>
+        ${grupo("Armas sencillas", armas("sencilla"))}${grupo("Armas marciales", armas("marcial"))}${grupo("Armas exóticas", armas("exótica"))}
+        ${grupo("Armaduras", EQ.ARMADURAS.filter((a) => a.clase !== "escudo").map((a) => opt(`armadura:${a.clave}`, `${a.nombre} (+${a.bono})`)))}
+        ${grupo("Escudos", EQ.ARMADURAS.filter((a) => a.clase === "escudo").map((a) => opt(`armadura:${a.clave}`, `${a.nombre} (+${a.bono})`)))}
+        ${grupo("Objetos maravillosos", EQ.MARAVILLOSOS.map((m) => opt(`mar:${m.clave}`, m.nombre)))}
+      </select></label>
+      <label>Calidad<select ${attrCalidad}>${CALIDADES.map(([v, t]) => `<option value="${v}"${v === calidad ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label>&nbsp;<button type="button" class="boton peq" data-a="${accion}" title="Lo apunta en sus notas">+ A notas</button></label>`;
+  }
+
+  /** Texto corto para las notas: «Espada larga +1 (1d8, 19–20/×2)», «Coraza (+6 CA, −4)». */
+  function textoEquipo(valor: string, calidad: string): string | null {
+    if (!EQ || !valor) return null;
+    const [tipo, clave] = valor.split(":");
+    const cal = calidad === "1" ? 1 : calidad === "2" ? 2 : calidad === "gc" ? "gc" : "normal";
+    if (tipo === "arma") {
+      const arma = EQ.ARMAS.find((a) => a.clave === clave);
+      return arma ? EQ.describirArma({ arma, calidad: cal, props: [], pequeno: false }).corto : null;
+    }
+    if (tipo === "armadura") {
+      const armadura = EQ.ARMADURAS.find((a) => a.clave === clave);
+      return armadura ? EQ.describirArmadura({ armadura, calidad: cal, props: [] }).corto : null;
+    }
+    const m = EQ.MARAVILLOSOS.find((x) => x.clave === clave);
+    return m ? m.nombre : null;
+  }
   const fichero = raiz.getElementById("fichero") as HTMLInputElement;
 
   let S: Mesa = cargar() ?? nueva();
@@ -614,6 +660,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         ${c.pj || c.companero ? campo("con", "Con (muere a −Con)", c.con, deFicha) : ""}
         ${c.pj ? "" : `<label class="ancho3">Bando<select name="bando">${BANDOS.map(([k, t]) => `<option value="${k}"${(c.companero ? "companero" : c.aliado ? "aliado" : "enemigo") === k ? " selected" : ""}>${t}</option>`).join("")}</select></label>`}
         ${deFicha ? "" : `${campo("toque", "Toque", c.toque)}${campo("desprevenido", "Desprev.", c.desprevenido)}${campo("percepcion", "Percepción", c.percepcion)}${campo("fort", "Fort", c.fort)}${campo("ref", "Ref", c.ref)}${campo("vol", "Vol", c.vol)}`}
+        ${c.pj ? "" : selectorEquipo(`name="equipo"`, `name="mejora"`, "equiparDlg")}
         <label class="ancho4">Notas<input type="text" name="notas" value="${esc(c.notas)}" placeholder="RD 5/plata, visión en la oscuridad…"></label>
       </div>
       <div class="fila-botones">
@@ -903,6 +950,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <label>Vol<input type="number" data-b="en-vol" data-foco="en-vol" value="${val("en-vol")}"></label>
         <label class="ancho2">Percepción<input type="number" data-b="en-perc" data-foco="en-perc" value="${val("en-perc")}"></label>
         <label class="ancho2">&nbsp;</label>
+        ${selectorEquipo(`data-b="en-equipo"`, `data-b="en-mejora"`, "equipar", String(B["en-equipo"] ?? ""), String(B["en-mejora"] ?? "normal"))}
         <label class="ancho4">Notas<input type="text" data-b="en-notas" data-foco="en-notas" value="${val("en-notas")}" placeholder="Maza +3 (1d8+1), canaliza 2d6, RD 5/plata…"></label>
       </div>
       <label class="casilla"><input type="checkbox" data-b="en-comun" ${B["en-comun"] === false ? "" : "checked"}> Misma iniciativa para todo el grupo</label>
@@ -1053,6 +1101,22 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       raiz.querySelector<HTMLInputElement>('[data-foco="en-n"]')?.select();
     },
     olvidarBloque: () => { bloque = null; render(); },
+    equipar: () => {
+      const t = textoEquipo(String(B["en-equipo"] ?? ""), String(B["en-mejora"] ?? "normal"));
+      if (!t) return;
+      B["en-notas"] = [String(B["en-notas"] ?? "").trim(), t].filter(Boolean).join(", ");
+      B["en-equipo"] = "";
+      render();
+    },
+    equiparDlg: () => {
+      const f = dlg.querySelector("form");
+      if (!f) return;
+      const sel = (n: string) => (f.querySelector(`[name="${n}"]`) as HTMLSelectElement | null)?.value ?? "";
+      const t = textoEquipo(sel("equipo"), sel("mejora") || "normal");
+      const notas = f.querySelector('[name="notas"]') as HTMLInputElement | null;
+      if (!t || !notas) return;
+      notas.value = [notas.value.trim(), t].filter(Boolean).join(", ");
+    },
     plantilla: (b) => {
       const p = S.plantillas[Number(b.dataset.i)];
       if (!p) return;
