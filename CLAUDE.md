@@ -33,6 +33,8 @@ src/
   lib/formato.ts        tipos de acción, oro, fechas relativas
   lib/sesion.ts         useSesion(): sesión + es_master()
   lib/jugador.ts        jugador elegido en localStorage
+  lib/reglas/           datos del Manual básico de PF1e (razas, clases 1-5, conjuros 0-3) y aplicar() del asistente
+  components/Asistente.tsx  asistente de raza/clase y selector de conjuros (lazy: solo se descarga en el biombo)
   components/Ojo.tsx    interruptor de revelado
   components/Retrato.tsx  retrato redondo; reduce la foto en el cliente antes de subirla
   views/Jugador.tsx     cabecera y pestañas del jugador (+ punto de "el máster te ha contestado")
@@ -65,6 +67,8 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - Los PJ salen de las fichas (`pjsParaCombate`). PG máx., CA, iniciativa, salvaciones, etc. mandan siempre las fichas; los PG actuales solo fuera de combate.
   - Solo escribe en las fichas cuando el máster lo pide, y solo `pg.actual`, con `poner_pg` (nunca un `guardarFicha` desde la mesa).
 - **Ficha = JSON libre, sin motor de reglas de PF1e.** Se edita con formulario, nunca en JSON.
+  - El **asistente PF1e** del biombo escribe una vez lo que dan raza y clase (atributos, rasgos, habilidades de clase, ataque base, salvaciones, PG, conjuros al día) y todo sigue siendo editable. Para poder repetirlo sin duplicar, apunta en `asistente` (clave oculta) lo que sumó, y sus rasgos llevan `origen` ("raza" / "clase").
+  - Las listas se pintan con `ordenados()` (por `orden`), porque jsonb reordena las claves.
   - Las listas van como objetos con clave estable (`dotes.dote-1`), nunca arrays.
   - Las claves van en minúsculas ascii (lo exige el `CHECK` de `campo_path`).
   - Las claves que no están en `ESQUEMA` se conservan al guardar.

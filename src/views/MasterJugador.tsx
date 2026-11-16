@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams } from "@tanstack/react-router";
 import {
@@ -23,13 +23,17 @@ import {
 } from "../lib/api";
 import {
   claveNueva, conSigno, conTotales, copiasDe, CORTO, defHabilidad, ESQUEMA, esObjeto, estaVisible, HABILIDADES, modificador,
-  PENALIZADOR, PLANTILLA, rutasDe, type Campo, type DatosHabilidad, type DefHabilidad, type Item,
+  ordenados, PENALIZADOR, PLANTILLA, rutasDe, type Campo, type DatosHabilidad, type DefHabilidad,
 } from "../lib/ficha";
 import { oro } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import { Ojo } from "../components/Ojo";
 import { Retrato } from "../components/Retrato";
 import { Colores } from "../components/Colores";
+
+/* Asistente de raza/clase y selector de conjuros: se cargan aparte, solo en el biombo. */
+const Asistente = lazy(() => import("../components/Asistente"));
+const SelectorConjuros = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorConjuros })));
 
 /* ------------------------------------------------------------ utilidades -- */
 
@@ -236,6 +240,10 @@ function Editor({
         </Celda>
       </section>
 
+      <Suspense fallback={null}>
+        <Asistente datos={datos} setDatos={setDatos} />
+      </Suspense>
+
       {ESQUEMA.map((s) => {
         if (s.tipo === "identidad") {
           return (
@@ -309,20 +317,19 @@ function Editor({
         }
 
         if (s.tipo === "lista") {
-          const lista = esObjeto(datos[s.clave]) ? (datos[s.clave] as Record<string, Item>) : {};
-          const claves = Object.keys(lista);
+          const entradas = ordenados(datos[s.clave]);
+          const claves = entradas.map(([k]) => k);
           return (
             <section key={s.clave} className="pagina">
               <div className="titulo-seccion">
                 <h2>{s.titulo}</h2>
-                {ojo(s.clave, `todas las ${s.titulo.toLowerCase()}`)}
+                {ojo(s.clave, `la sección ${s.titulo.toLowerCase()}`)}
               </div>
-              {claves.map((k) => {
-                const it = esObjeto(lista[k]) ? lista[k] : {};
+              {entradas.map(([k, it]) => {
                 return (
                   <div key={k} className="item">
                     <div className="item-cabeza">
-                      <input className="campo" aria-label={`Nombre de la ${s.singular}`} placeholder={`Nombre de la ${s.singular}`} value={it.nombre ?? ""} onChange={(e) => poner([s.clave, k, "nombre"], e.target.value)} />
+                      <input className="campo" aria-label={`Nombre (${s.singular})`} placeholder="Nombre" value={it.nombre ?? ""} onChange={(e) => poner([s.clave, k, "nombre"], e.target.value)} />
                       {s.conTotal && (
                         <input
                           className="campo cifra total"
@@ -356,6 +363,11 @@ function Editor({
               <button type="button" className="boton chico secundario" onClick={() => poner([s.clave, claveNueva(s.singular, claves)], { nombre: "" })}>
                 + Añadir {s.singular}
               </button>
+              {s.clave === "conjuros" && (
+                <Suspense fallback={null}>
+                  <SelectorConjuros datos={datos} poner={poner} />
+                </Suspense>
+              )}
             </section>
           );
         }
@@ -433,6 +445,8 @@ function TablaHabilidades({ titulo, datos, poner, ojo, quitarRevelado }: {
           <span className="hab-at">{CORTO[def.at]}</span>
           {def.entrenada && <span className="hab-marca" title="Solo entrenada: sin rangos no se puede usar">E</span>}
           {def.armadura && <span className="hab-marca" title="Le afecta el penalizador de armadura">A</span>}
+          {typeof h.raza === "number" && <span className="hab-at" title="Bonificador racial (ya sumado al total)">raza {conSigno(h.raza)}</span>}
+          {typeof h.rasgo === "number" && <span className="hab-at" title="Bonificador de un rasgo de clase (ya sumado al total)">rasgo {conSigno(h.rasgo)}</span>}
         </div>
         <input type="checkbox" className="hab-clase" aria-label={`${nombre}: habilidad de clase`} title="Habilidad de clase (+3 con algún rango)" checked={!!h.clase} onChange={(e) => poner(["habilidades", k, "clase"], e.target.checked || undefined)} />
         <input className={`campo cifra ${excede ? "excede" : ""}`} type="number" inputMode="numeric" min={0} aria-label={`${nombre}: rangos`} title={excede ? "Más rangos que nivel" : undefined} placeholder="0" value={typeof h.rangos === "number" ? h.rangos : ""} onChange={(e) => poner(["habilidades", k, "rangos"], num(e.target.value))} />
@@ -475,7 +489,7 @@ function TablaHabilidades({ titulo, datos, poner, ojo, quitarRevelado }: {
         <span>Habilidad</span><span>Clase</span><span>Rangos</span><span>Otros</span><span>Total</span><span />
       </div>
       {HABILIDADES.flatMap((def) => [fila(def.clave, def, false), ...(def.abierta ? copiasDe(def.clave, hab).map((k) => fila(k, def, true)) : [])])}
-      <p className="nota">E: solo entrenada (sin rangos no se puede usar). A: le resta el penalizador de armadura. Total = rangos + atributo + 3 si es de clase y tiene rangos + otros.</p>
+      <p className="nota">E: solo entrenada (sin rangos no se puede usar). A: le resta el penalizador de armadura. Total = rangos + atributo + 3 si es de clase y tiene rangos + otros + bonificadores de raza y de rasgos.</p>
       {ajenas.length > 0 && <p className="nota">Hay {ajenas.length} habilidades antiguas guardadas fuera de la tabla: {ajenas.join(", ")}.</p>}
     </section>
   );

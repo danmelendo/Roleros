@@ -21,7 +21,8 @@ export type Seccion =
   | { tipo: "habilidades"; clave: "habilidades"; titulo: string }
   | { tipo: "texto"; clave: string; titulo: string };
 
-export type Item = { nombre?: string; texto?: string; total?: number };
+/** Elemento de lista. origen = lo puso el asistente ("raza" o "clase"); orden = posición al pintarlo. */
+export type Item = { nombre?: string; texto?: string; total?: number; origen?: string; orden?: number; nivel?: number };
 
 export const IDENTIDAD: Campo[] = [
   { clave: "raza", etiqueta: "Raza", tipo: "texto" },
@@ -67,6 +68,7 @@ export const ESQUEMA: Seccion[] = [
     ],
   },
   { tipo: "habilidades", clave: "habilidades", titulo: "Habilidades" },
+  { tipo: "lista", clave: "raciales", titulo: "Rasgos raciales", singular: "rasgo racial" },
   { tipo: "lista", clave: "rasgos", titulo: "Rasgos de clase", singular: "rasgo" },
   { tipo: "lista", clave: "dotes", titulo: "Dotes", singular: "dote" },
   { tipo: "lista", clave: "conjuros", titulo: "Magia", singular: "conjuro" },
@@ -86,6 +88,7 @@ export const PLANTILLA: FichaDatos = {
   combate: { ca: 10, toque: 10, desprevenido: 10, ini: 0, bab: 0, bmc: 0, dmc: 10, velocidad: "9 m" },
   salvaciones: { fort: 0, ref: 0, vol: 0 },
   habilidades: {},
+  raciales: {},
   rasgos: {},
   dotes: {},
   conjuros: {},
@@ -143,7 +146,8 @@ export const HABILIDADES: DefHabilidad[] = [
 export const CORTO: Record<Atributo, string> = { fue: "FUE", des: "DES", con: "CON", int: "INT", sab: "SAB", car: "CAR" };
 
 /** Lo que se guarda de cada habilidad. total lo calcula conTotales(); null = sin rangos y solo entrenada. */
-export type DatosHabilidad = { rangos?: number; clase?: boolean; otros?: number; detalle?: string; base?: string; total?: number | null };
+/** raza / rasgo: bonificadores que pone el asistente (racial, o de un rasgo de clase como el conocimiento de bardo). */
+export type DatosHabilidad = { rangos?: number; clase?: boolean; otros?: number; raza?: number; rasgo?: number; detalle?: string; base?: string; total?: number | null };
 
 /** Penalizador de armadura (clave de primer nivel; no está en ESQUEMA, así que el jugador no lo ve). */
 export const PENALIZADOR = "penalizador_armadura";
@@ -175,13 +179,26 @@ export function conTotales(d: FichaDatos): FichaDatos {
     const rangos = typeof h.rangos === "number" ? h.rangos : 0;
     const total = def.entrenada && rangos < 1
       ? null
-      : rangos + (modificador(at[def.at]) ?? 0) + (h.clase && rangos > 0 ? 3 : 0) + (typeof h.otros === "number" ? h.otros : 0) + (def.armadura ? pen : 0);
+      : rangos + (modificador(at[def.at]) ?? 0) + (h.clase && rangos > 0 ? 3 : 0) + (typeof h.otros === "number" ? h.otros : 0)
+        + (typeof h.raza === "number" ? h.raza : 0) + (typeof h.rasgo === "number" ? h.rasgo : 0) + (def.armadura ? pen : 0);
     hab[k] = { ...h, total };
   }
   return { ...d, habilidades: hab };
 }
 
 /* ------------------------------------------------------------- utilidades -- */
+
+/** Entradas de una lista en orden: primero por `orden` (lo pone el asistente), luego tal cual.
+    Hace falta porque jsonb devuelve las claves reordenadas. */
+export function ordenados(lista: unknown): [string, Item][] {
+  if (!esObjeto(lista)) return [];
+  const pos = (it: Item, i: number) => (typeof it.orden === "number" ? it.orden : 10_000 + i);
+  const claves = Object.keys(lista).sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  return claves
+    .map((k, i) => [k, (esObjeto(lista[k]) ? lista[k] : {}) as Item, i] as const)
+    .sort((a, b) => pos(a[1], a[2]) - pos(b[1], b[2]))
+    .map(([k, it]) => [k, it]);
+}
 
 export const esObjeto = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);

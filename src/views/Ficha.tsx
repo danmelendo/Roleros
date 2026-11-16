@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { fichaRevelada, type FichaDatos } from "../lib/api";
 import { Retrato } from "../components/Retrato";
-import { copiasDe, ESQUEMA, esObjeto, HABILIDADES, modificador, mostrar, conSigno, type DatosHabilidad, type Item } from "../lib/ficha";
+import { copiasDe, ESQUEMA, esObjeto, HABILIDADES, modificador, mostrar, conSigno, ordenados, type DatosHabilidad } from "../lib/ficha";
 import { nubeConfigurada } from "../lib/supabase";
 
 /* El jugador solo recibe lo revelado (lo filtra el servidor). Aquí, lo que no
@@ -115,7 +115,7 @@ function Cuerpo({ f }: { f: FichaDatos }) {
         }
 
         if (s.tipo === "lista") {
-          const items = esObjeto(f[s.clave]) ? (Object.values(f[s.clave] as Record<string, unknown>).filter(esObjeto) as Item[]) : [];
+          const items = ordenados(f[s.clave]).map(([, it]) => it);
           return (
             <Seccion key={s.clave} titulo={s.titulo} vacia={items.length === 0}>
               {items.length === 0 ? (
