@@ -437,7 +437,8 @@ form.pagina > .boton { align-self: flex-start; }
 .selector-conjuros .fila { justify-content: flex-start; gap: 6px; margin-bottom: 6px; }
 .selector-conjuros .fila .campo { flex: 1; min-width: 0; }
 .selector-conjuros .campo.corto { flex: 0 0 96px; }
-.selector-conjuros .nota { margin: 0; }
+.selector-conjuros .nota { margin: 0 0 6px; }
+.selector-conjuros .detalle-dote { font-size: 0.94rem; }
 
 /* Habilidades (biombo): nombre · clase · rangos · otros · total · ojo */
 .hab-cabecera { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }

@@ -4,6 +4,7 @@ import { CORTO, esObjeto, modificador, type Atributo } from "../lib/ficha";
 import { aplicar, eleccionInicial, modsDe, type Eleccion } from "../lib/reglas/aplicar";
 import { CLASES, claseDe, type ListaConjuros } from "../lib/reglas/clases";
 import { conjurosDe } from "../lib/reglas/conjuros";
+import { DOTES, slug, type TipoDote } from "../lib/reglas/dotes";
 import { RAZAS, razaDe } from "../lib/reglas/razas";
 
 /* Se carga aparte (lazy) desde el biombo: los datos de reglas no viajan al
@@ -159,6 +160,69 @@ export function SelectorConjuros({ datos, poner }: { datos: FichaDatos; poner: (
         <button type="button" className="boton chico" disabled={!c} onClick={anadir}>Añadir</button>
       </div>
       {c && <p className="nota">{c.escuela} · {c.texto} <i>({c.ingles})</i></p>}
+    </div>
+  );
+}
+
+const TIPOS_DOTE: { clave: TipoDote | ""; nombre: string }[] = [
+  { clave: "", nombre: "Todas" },
+  { clave: "combate", nombre: "De combate" },
+  { clave: "general", nombre: "Generales" },
+  { clave: "metamágica", nombre: "Metamágicas" },
+  { clave: "creación", nombre: "De creación" },
+];
+
+/** Añade dotes del Manual básico a la sección de Dotes. */
+export function SelectorDotes({ datos, poner }: { datos: FichaDatos; poner: (ruta: string[], v: unknown) => void }) {
+  const [tipo, setTipo] = useState<TipoDote | "">("");
+  const [busca, setBusca] = useState("");
+  const [elegida, setElegida] = useState("");
+  const [detalle, setDetalle] = useState("");
+  const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const opciones = useMemo(
+    () => DOTES.filter((d) => (!tipo || d.tipo === tipo) && (!busca || norm(`${d.nombre} ${d.ingles}`).includes(norm(busca)))),
+    [tipo, busca],
+  );
+  const ya = esObjeto(datos.dotes) ? datos.dotes : {};
+  const d = DOTES.find((x) => x.clave === elegida);
+
+  const anadir = () => {
+    if (!d) return;
+    const extra = detalle.trim();
+    poner(["dotes", `dt-${d.clave}${extra ? `-${slug(extra)}` : ""}`], {
+      nombre: extra ? `${d.nombre} (${extra})` : d.nombre,
+      texto: `${d.requisitos ? `Requisitos: ${d.requisitos}. ` : ""}${d.texto} (${d.ingles})`,
+    });
+    setElegida("");
+    setDetalle("");
+  };
+
+  return (
+    <div className="selector-conjuros">
+      <span className="etiqueta">Añadir del Manual básico</span>
+      <div className="fila">
+        <select className="campo corto" aria-label="Tipo de dote" value={tipo} onChange={(ev) => { setTipo(ev.target.value as TipoDote | ""); setElegida(""); }}>
+          {TIPOS_DOTE.map((t) => <option key={t.clave} value={t.clave}>{t.nombre}</option>)}
+        </select>
+        <input className="campo" type="search" aria-label="Buscar dote" placeholder="Buscar (también en inglés)" value={busca} onChange={(ev) => setBusca(ev.target.value)} />
+      </div>
+      <div className="fila">
+        <select className="campo" aria-label="Dote" value={elegida} onChange={(ev) => setElegida(ev.target.value)}>
+          <option value="">— elige una dote ({opciones.length}) —</option>
+          {opciones.map((x) => (
+            <option key={x.clave} value={x.clave}>{x.nombre}{Object.keys(ya).some((k) => k === `dt-${x.clave}` || k.startsWith(`dt-${x.clave}-`)) ? " ✓" : ""}</option>
+          ))}
+        </select>
+        <button type="button" className="boton chico" disabled={!d} onClick={anadir}>Añadir</button>
+      </div>
+      {d && (
+        <>
+          <p className="nota">
+            <b>{d.tipo[0].toUpperCase() + d.tipo.slice(1)}.</b> {d.requisitos ? `Requisitos: ${d.requisitos}. ` : "Sin requisitos. "}{d.texto} <i>({d.ingles})</i>
+          </p>
+          <input className="campo detalle-dote" aria-label="Especificar" placeholder="Especificar si hace falta: arma, habilidad, escuela… (opcional)" value={detalle} onChange={(ev) => setDetalle(ev.target.value)} />
+        </>
+      )}
     </div>
   );
 }

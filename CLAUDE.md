@@ -33,8 +33,8 @@ src/
   lib/formato.ts        tipos de acción, oro, fechas relativas
   lib/sesion.ts         useSesion(): sesión + es_master()
   lib/jugador.ts        jugador elegido en localStorage
-  lib/reglas/           datos del Manual básico de PF1e (razas, clases 1-5, conjuros 0-3) y aplicar() del asistente
-  components/Asistente.tsx  asistente de raza/clase y selector de conjuros (lazy: solo se descarga en el biombo)
+  lib/reglas/           datos del Manual básico de PF1e (razas, clases 1-5, conjuros 0-3, dotes) y aplicar() del asistente
+  components/Asistente.tsx  asistente de raza/clase y selectores de conjuros y dotes (lazy: solo se descarga en el biombo)
   components/Ojo.tsx    interruptor de revelado
   components/Retrato.tsx  retrato redondo; reduce la foto en el cliente antes de subirla
   views/Jugador.tsx     cabecera y pestañas del jugador (+ punto de "el máster te ha contestado")

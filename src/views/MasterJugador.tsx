@@ -34,6 +34,7 @@ import { Colores } from "../components/Colores";
 /* Asistente de raza/clase y selector de conjuros: se cargan aparte, solo en el biombo. */
 const Asistente = lazy(() => import("../components/Asistente"));
 const SelectorConjuros = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorConjuros })));
+const SelectorDotes = lazy(() => import("../components/Asistente").then((m) => ({ default: m.SelectorDotes })));
 
 /* ------------------------------------------------------------ utilidades -- */
 
@@ -366,6 +367,11 @@ function Editor({
               {s.clave === "conjuros" && (
                 <Suspense fallback={null}>
                   <SelectorConjuros datos={datos} poner={poner} />
+                </Suspense>
+              )}
+              {s.clave === "dotes" && (
+                <Suspense fallback={null}>
+                  <SelectorDotes datos={datos} poner={poner} />
                 </Suspense>
               )}
             </section>
