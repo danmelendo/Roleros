@@ -641,7 +641,7 @@ function PetateMaster({ jugadorId, oroActual, raza }: { jugadorId: string; oroAc
           oro={oroActual}
           ocupado={cambio.isPending}
           onAnadir={(e) => cambio.mutate(async () => {
-            await anadirItem(jugadorId, e.nombre, 1, e.notas, e.visible);
+            await anadirItem(jugadorId, e.nombre, e.cantidad, e.notas, e.visible);
             if (e.cobrar) await ponerOro(jugadorId, Math.round((oroActual - e.precio) * 100) / 100);
           })}
         />

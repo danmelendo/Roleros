@@ -6,7 +6,8 @@ import { CLASES, claseDe, type ListaConjuros } from "../lib/reglas/clases";
 import { conjurosDe } from "../lib/reglas/conjuros";
 import { DOTES, slug, type TipoDote } from "../lib/reglas/dotes";
 import {
-  ARMADURAS, ARMAS, describirArma, describirArmadura, describirMaravilloso, MARAVILLOSOS, po, propiedadesPara, type Calidad,
+  ARMADURAS, ARMAS, describirArma, describirArmadura, describirMaravilloso, describirMundano, describirPocion, MARAVILLOSOS, MUNDANOS,
+  po, POCIONES, propiedadesPara, type Calidad,
 } from "../lib/reglas/equipo";
 import { RAZAS, razaDe } from "../lib/reglas/razas";
 
@@ -237,10 +238,12 @@ const CATEGORIAS = [
   { clave: "armadura", nombre: "Armaduras" },
   { clave: "escudo", nombre: "Escudos" },
   { clave: "maravilloso", nombre: "Objetos maravillosos (NL ≤ 7)" },
+  { clave: "pocion", nombre: "Pociones y aceites" },
+  { clave: "mundano", nombre: "Equipo de aventurero" },
 ] as const;
 type Categoria = (typeof CATEGORIAS)[number]["clave"];
 
-export type EquipoElegido = { nombre: string; notas: string; precio: number; visible: boolean; cobrar: boolean };
+export type EquipoElegido = { nombre: string; notas: string; precio: number; cantidad: number; visible: boolean; cobrar: boolean };
 
 /** Armas, armaduras, escudos y objetos maravillosos del Manual básico para el petate. */
 export function SelectorEquipo({ pequeno, oro, ocupado, onAnadir }: {
@@ -253,20 +256,27 @@ export function SelectorEquipo({ pequeno, oro, ocupado, onAnadir }: {
   const [peq, setPeq] = useState(pequeno);
   const [visible, setVisible] = useState(true);
   const [cobrar, setCobrar] = useState(false);
+  const [cantidad, setCantidad] = useState(1);
 
   const armas = ARMAS.filter((a) => a.competencia === cat);
   const armaduras = ARMADURAS.filter((a) => (cat === "escudo" ? a.clase === "escudo" : a.clase !== "escudo"));
   const arma = armas.find((a) => a.clave === clave);
   const armadura = cat === "armadura" || cat === "escudo" ? armaduras.find((a) => a.clave === clave) : undefined;
   const maravilloso = cat === "maravilloso" ? MARAVILLOSOS.find((m) => m.clave === clave) : undefined;
+  const pocion = cat === "pocion" ? POCIONES.find((p) => p.clave === clave) : undefined;
+  const mundano = cat === "mundano" ? MUNDANOS.find((m) => m.clave === clave) : undefined;
+  const porUnidades = cat === "pocion" || cat === "mundano";
   const base = arma ?? armadura;
   const posibles = base ? propiedadesPara(base) : [];
   const elegidas = posibles.filter((p) => props.includes(p.clave));
   const desc = arma ? describirArma({ arma, calidad, props: elegidas, pequeno: peq })
     : armadura ? describirArmadura({ armadura, calidad, props: elegidas })
-    : maravilloso ? describirMaravilloso(maravilloso) : null;
+    : maravilloso ? describirMaravilloso(maravilloso)
+    : pocion ? describirPocion(pocion)
+    : mundano ? describirMundano(mundano) : null;
+  const total = desc ? Math.round(desc.precio * (porUnidades ? cantidad : 1) * 100) / 100 : 0;
   const equivalente = typeof calidad === "number" ? calidad + elegidas.reduce((s, p) => s + p.bono, 0) : 0;
-  const cambiarCat = (c: Categoria) => { setCat(c); setClave(""); setCalidad("normal"); setProps([]); };
+  const cambiarCat = (c: Categoria) => { setCat(c); setClave(""); setCalidad("normal"); setProps([]); setCantidad(1); };
 
   return (
     <div className="selector-conjuros">
@@ -279,7 +289,15 @@ export function SelectorEquipo({ pequeno, oro, ocupado, onAnadir }: {
       <div className="fila">
         <select className="campo" aria-label="Objeto" value={clave} onChange={(e) => { setClave(e.target.value); setProps([]); }}>
           <option value="">— elige —</option>
-          {cat === "maravilloso"
+          {cat === "pocion"
+            ? [0, 1, 2, 3].map((nv) => (
+                <optgroup key={nv} label={nv === 0 ? "Nivel 0" : `Nivel ${nv}`}>
+                  {POCIONES.filter((p) => p.nivel === nv).map((p) => <option key={p.clave} value={p.clave}>{p.nombre} · {po(p.precio)}</option>)}
+                </optgroup>
+              ))
+            : cat === "mundano"
+            ? MUNDANOS.map((m) => <option key={m.clave} value={m.clave}>{m.nombre} · {po(m.precio)}</option>)
+            : cat === "maravilloso"
             ? MARAVILLOSOS.map((m) => <option key={m.clave} value={m.clave}>{m.nombre} · {po(m.precio)}</option>)
             : cat === "armadura" || cat === "escudo"
               ? armaduras.map((a) => <option key={a.clave} value={a.clave}>{a.nombre} · +{a.bono} · {po(a.precio)}</option>)
@@ -320,15 +338,20 @@ export function SelectorEquipo({ pequeno, oro, ocupado, onAnadir }: {
       {desc && (
         <>
           <p className="nota"><b>{desc.nombre}</b>{equivalente > 2 ? ` (equivale a +${equivalente})` : ""}. {desc.notas}</p>
+          {porUnidades && (
+            <div className="fila">
+              <label className="casilla-linea">Cantidad <input className="campo cifra corto" type="number" min={1} max={999} value={cantidad} onChange={(e) => setCantidad(Math.max(1, Math.floor(Number(e.target.value)) || 1))} /></label>
+            </div>
+          )}
           <div className="fila">
             <label className="casilla-linea"><input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} /> Lo ve el jugador</label>
-            <label className="casilla-linea"><input type="checkbox" checked={cobrar} onChange={(e) => setCobrar(e.target.checked)} /> Cobrar {po(desc.precio)}{cobrar && desc.precio > oro ? " (no le llega)" : ""}</label>
+            <label className="casilla-linea"><input type="checkbox" checked={cobrar} onChange={(e) => setCobrar(e.target.checked)} /> Cobrar {po(total)}{cobrar && total > oro ? " (no le llega)" : ""}</label>
           </div>
           <div className="fila">
             <span />
-            <button type="button" className="boton chico" disabled={ocupado || (cobrar && desc.precio > oro)} onClick={() => {
-              onAnadir({ nombre: desc.nombre, notas: desc.notas, precio: desc.precio, visible, cobrar });
-              setClave(""); setProps([]); setCalidad("normal");
+            <button type="button" className="boton chico" disabled={ocupado || (cobrar && total > oro)} onClick={() => {
+              onAnadir({ nombre: desc.nombre, notas: desc.notas, precio: total, cantidad: porUnidades ? cantidad : 1, visible, cobrar });
+              setClave(""); setProps([]); setCalidad("normal"); setCantidad(1);
             }}>
               Añadir al petate
             </button>

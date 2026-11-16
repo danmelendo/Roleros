@@ -159,6 +159,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         ${grupo("Armas sencillas", armas("sencilla"))}${grupo("Armas marciales", armas("marcial"))}${grupo("Armas exóticas", armas("exótica"))}
         ${grupo("Armaduras", EQ.ARMADURAS.filter((a) => a.clase !== "escudo").map((a) => opt(`armadura:${a.clave}`, `${a.nombre} (+${a.bono})`)))}
         ${grupo("Escudos", EQ.ARMADURAS.filter((a) => a.clase === "escudo").map((a) => opt(`armadura:${a.clave}`, `${a.nombre} (+${a.bono})`)))}
+        ${grupo("Pociones y aceites", EQ.POCIONES.map((p) => opt(`pocion:${p.clave}`, p.nombre)))}
         ${grupo("Objetos maravillosos", EQ.MARAVILLOSOS.map((m) => opt(`mar:${m.clave}`, m.nombre)))}
       </select></label>
       <label>Calidad<select ${attrCalidad}>${CALIDADES.map(([v, t]) => `<option value="${v}"${v === calidad ? " selected" : ""}>${t}</option>`).join("")}</select></label>
@@ -178,6 +179,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       const armadura = EQ.ARMADURAS.find((a) => a.clave === clave);
       return armadura ? EQ.describirArmadura({ armadura, calidad: cal, props: [] }).corto : null;
     }
+    if (tipo === "pocion") return EQ.POCIONES.find((x) => x.clave === clave)?.nombre ?? null;
     const m = EQ.MARAVILLOSOS.find((x) => x.clave === clave);
     return m ? m.nombre : null;
   }

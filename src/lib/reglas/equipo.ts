@@ -1,6 +1,7 @@
 /* Equipo del Manual básico de Pathfinder 1e: armas (sencillas, marciales y
    exóticas), armaduras y escudos, propiedades mágicas de bonificador +1 y +2
-   (más las de precio fijo baratas) y objetos maravillosos de NL 7 o menos.
+   (más las de precio fijo baratas), objetos maravillosos de NL 7 o menos,
+   pociones y aceites, y equipo de aventurero.
    Medidas en pies y libras. Precios en po. Para dárselo a los jugadores (petate)
    y a los PNJ (mesa de combate). */
 
@@ -355,6 +356,163 @@ export function describirMaravilloso(m: Maravilloso) {
   return {
     nombre: m.nombre,
     notas: [m.texto, m.ranura !== "—" ? `ranura: ${m.ranura}` : "sin ranura", `NL ${m.nl}`, `${po(m.precio)} (${m.ingles})`].join(" · "),
+    precio: m.precio,
+    corto: m.nombre,
+  };
+}
+
+/* ------------------------------------------------------ pociones y aceites -- */
+/* Las pociones habituales del Manual básico. Precio = nivel del conjuro × NL × 50
+   (nivel 0 cuenta como ½). Los aceites se aplican a un objeto en vez de beberse. */
+export type Pocion = { clave: string; nombre: string; ingles: string; nivel: number; nl: number; aceite: boolean; precio: number; texto: string };
+
+// conjuro | inglés | nivel | NL | aceite (a) | efecto
+const POCIONES_DATOS = `
+Orientación divina|Guidance|0|1||+1 a una tirada de ataque, salvación o prueba (1 min).
+Resistencia|Resistance|0|1||+1 a las salvaciones (1 min).
+Estabilizar|Stabilize|0|1||Estabiliza a quien está moribundo (hay que dársela).
+Virtud|Virtue|0|1||1 PG temporal (1 min).
+Luz|Light|0|1|a|Un objeto brilla como una antorcha (10 min).
+Curar heridas leves|Cure Light Wounds|1|1||Cura 1d8+1.
+Soportar los elementos|Endure Elements|1|1||A gusto con frío o calor extremos (24 h).
+Esconderse de los animales|Hide from Animals|1|1||Los animales no te perciben (10 min).
+Esconderse de los muertos vivientes|Hide from Undead|1|1||Los muertos vivientes no te perciben (10 min).
+Salto|Jump|1|1||+10 a Acrobacias para saltar (1 min).
+Armadura de mago|Mage Armor|1|1||+4 de armadura a la CA (1 h).
+Colmillo mágico|Magic Fang|1|1||+1 a un arma natural (1 min).
+Arma mágica|Magic Weapon|1|1|a|El arma gana +1 (1 min).
+Piedra mágica|Magic Stone|1|1|a|Tres piedras con +1 que hacen 1d6+1 (2d6+2 a muertos vivientes).
+Pasar sin dejar rastro|Pass without Trace|1|1||No dejas huellas (1 h).
+Protección contra el mal|Protection from Evil|1|1||+2 a CA y salvaciones contra el mal; bloquea el control mental (1 min).
+Quitar el miedo|Remove Fear|1|1||Suprime el miedo, o +4 contra él (10 min).
+Santuario|Sanctuary|1|1||Quien quiera atacarte debe superar Vol CD 11 (1 asalto).
+Escudo de la fe +2|Shield of Faith|1|1||+2 de desvío a la CA (1 min).
+Agrandar persona|Enlarge Person|1|5||Tamaño Grande: +2 Fue, −2 Des (5 min).
+Reducir persona|Reduce Person|1|5||Tamaño Pequeño: +2 Des, −2 Fue (5 min).
+Garrote|Shillelagh|1|1|a|Bastón o garrote con +1 y más daño (1 min).
+Bendecir arma|Bless Weapon|1|1|a|Críticos automáticos contra el mal (1 min).
+Ayuda|Aid|2|3||+1 a ataque y contra miedo, 1d8+3 PG temporales (3 min).
+Piel robliza +2|Barkskin|2|3||+2 de armadura natural (30 min).
+Aguante del oso|Bear's Endurance|2|3||+4 a la Con (3 min).
+Difuminar|Blur|2|3||20 % de fallo contra ti (3 min).
+Fuerza de toro|Bull's Strength|2|3||+4 a la Fue (3 min).
+Gracia felina|Cat's Grace|2|3||+4 a la Des (3 min).
+Curar heridas moderadas|Cure Moderate Wounds|2|3||Cura 2d8+3.
+Oscuridad|Darkness|2|3|a|Un objeto irradia oscuridad en 20 pies (3 min).
+Visión en la oscuridad|Darkvision|2|3||Ves en la oscuridad 60 pies (3 h).
+Retrasar veneno|Delay Poison|2|3||El veneno no te afecta (3 h).
+Esplendor del águila|Eagle's Splendor|2|3||+4 al Car (3 min).
+Astucia del zorro|Fox's Cunning|2|3||+4 a la Int (3 min).
+Invisibilidad|Invisibility|2|3||Invisible hasta que ataques (3 min).
+Restablecimiento menor|Lesser Restoration|2|3||Quita 1d4 de daño a una característica o la fatiga.
+Levitar|Levitate|2|3||Subes o bajas a voluntad (3 min).
+Sabiduría del búho|Owl's Wisdom|2|3||+4 a la Sab (3 min).
+Protección contra flechas|Protection from Arrows|2|3||RD 10/mágico contra ataques a distancia (3 h).
+Eliminar parálisis|Remove Paralysis|2|3||Libera de parálisis o lentitud.
+Resistir energía 10|Resist Energy|2|3||Resistencia 10 a un tipo de energía (30 min).
+Trepar cual arácnido|Spider Climb|2|3||Trepas por paredes y techos (30 min).
+Alineamiento indetectable|Undetectable Alignment|2|3||Oculta tu alineamiento (24 h).
+Curar heridas graves|Cure Serious Wounds|3|5||Cura 3d8+5.
+Luz del día|Daylight|3|5|a|Luz brillante en 60 pies (50 min).
+Desplazamiento|Displacement|3|5||50 % de fallo contra ti (5 asaltos).
+Flecha flamígera|Flame Arrow|3|5|a|50 proyectiles hacen +1d6 de fuego (50 min).
+Volar|Fly|3|5||Vuelas a 60 pies (5 min).
+Forma gaseosa|Gaseous Form|3|5||Te conviertes en niebla (10 min).
+Prisa|Haste|3|5||Un ataque más, +1 a ataque, CA y Ref, +30 pies (5 asaltos).
+Heroísmo|Heroism|3|5||+2 a ataque, salvaciones y habilidades (50 min).
+Afilar|Keen Edge|3|5|a|Duplica el rango de amenaza del arma (50 min).
+Arma mágica mayor +1|Greater Magic Weapon|3|5|a|El arma gana +1 (5 h).
+Investidura mágica +1|Magic Vestment|3|5|a|La armadura o el escudo gana +1 (5 h).
+Neutralizar veneno|Neutralize Poison|3|5||Elimina un veneno.
+Protección contra la energía|Protection from Energy|3|5||Absorbe 60 puntos de un tipo de energía (50 min).
+Furia|Rage|3|5||+2 Fue y Con, +1 Vol, −2 CA (5 asaltos).
+Quitar ceguera/sordera|Remove Blindness/Deafness|3|5||Cura la ceguera o la sordera.
+Quitar maldición|Remove Curse|3|5||Libera de una maldición.
+Quitar enfermedad|Remove Disease|3|5||Cura las enfermedades.
+Don de lenguas|Tongues|3|5||Hablas y entiendes cualquier idioma (50 min).
+Respirar bajo el agua|Water Breathing|3|5||Respiras bajo el agua (10 h).
+Caminar sobre el agua|Water Walk|3|5||Caminas sobre el agua (50 min).
+`;
+
+export const POCIONES: Pocion[] = filas(POCIONES_DATOS).map(([conjuro, ingles, nivel, nl, aceite, texto]) => {
+  const nv = n(nivel), cl = n(nl), esAceite = aceite === "a";
+  const nombre = `${esAceite ? "Aceite" : "Poción"} de ${conjuro.charAt(0).toLowerCase()}${conjuro.slice(1)}`;
+  return { clave: slug(nombre), nombre, ingles: `${esAceite ? "Oil" : "Potion"} of ${ingles}`, nivel: nv, nl: cl, aceite: esAceite, precio: Math.max(nv, 0.5) * cl * 50, texto };
+});
+
+/* --------------------------------------------------- equipo de aventurero -- */
+// nombre | inglés | precio (po) | peso (libras) | nota
+const MUNDANOS_DATOS = `
+Mochila|Backpack|2|2|
+Saco de dormir|Bedroll|0,1|5|
+Manta de invierno|Blanket, winter|0,5|3|
+Saco|Sack|0,1|0,5|
+Raciones de viaje (1 día)|Trail rations|0,5|1|
+Odre|Waterskin|1|4|lleno
+Antorcha|Torch|0,01|1|1 hora de luz normal en 20 pies
+Vela|Candle|0,01|0|luz tenue en 5 pies, 1 hora
+Aceite (frasco)|Oil|0,1|1|6 horas en una linterna; también se puede arrojar encendido
+Linterna de capucha|Lantern, hooded|7|2|luz normal en 30 pies
+Linterna sorda|Lantern, bullseye|12|3|cono de luz de 60 pies
+Barra de luz|Sunrod|2|1|luz normal en 30 pies durante 6 horas
+Pedernal y eslabón|Flint and steel|1|0|
+Fosforillo|Tindertwig|1|0|enciende fuego como acción estándar
+Cuerda de cáñamo (50 pies)|Rope, hemp|1|10|
+Cuerda de seda (50 pies)|Rope, silk|10|5|
+Garfio|Grappling hook|1|4|
+Palanca|Crowbar|2|5|+2 a Fuerza para forzar
+Pértiga (10 pies)|Pole, 10-foot|0,05|8|
+Pala|Shovel|2|8|
+Pico de minero|Pick, miner's|3|10|
+Martillo|Hammer|0,5|2|
+Clavos de escalada (10)|Pitons|0,1|5|
+Abrojos|Caltrops|1|2|cubren un cuadrado de 5 pies
+Cadena (10 pies)|Chain|30|2|
+Grilletes|Manacles|15|2|
+Candado sencillo|Lock, simple|20|1|
+Tienda de campaña|Tent|10|20|
+Espejo pequeño de acero|Mirror, small steel|10|0,5|
+Catalejo|Spyglass|1000|1|ves el doble de lejos
+Tiza|Chalk|0,01|0|
+Tinta (frasco)|Ink|8|0|
+Pluma|Inkpen|0,1|0|
+Papel (hoja)|Paper|0,4|0|
+Pergamino (hoja)|Parchment|0,2|0|
+Libro de conjuros en blanco|Spellbook, blank|15|3|
+Bolsa de componentes|Spell component pouch|5|2|
+Símbolo sagrado de madera|Holy symbol, wooden|1|0|
+Símbolo sagrado de plata|Holy symbol, silver|25|1|
+Silbato de señales|Signal whistle|0,08|0|
+Herramientas de ladrón|Thieves' tools|30|1|sin ellas, −2 a Inutilizar mecanismo
+Herramientas de ladrón de gran calidad|Thieves' tools, masterwork|100|2|+2 a Inutilizar mecanismo
+Botiquín de sanador (10 usos)|Healer's kit|50|1|+2 a Sanar
+Agua bendita (frasco)|Holy water|25|1|2d4 a muertos vivientes y ajenos malignos (arrojadiza)
+Fuego de alquimista (frasco)|Alchemist's fire|20|1|1d6 de fuego y 1d6 el asalto siguiente (arrojadizo)
+Ácido (frasco)|Acid|10|1|1d6 de ácido (arrojadizo)
+Antitoxina|Antitoxin|50|0|+5 contra veneno durante 1 hora
+Bolsa de cola|Tanglefoot bag|50|4|deja enredado (arrojadiza)
+Piedra de trueno|Thunderstone|30|1|ensordece en 10 pies (Fort CD 15)
+Palo de humo|Smokestick|20|0,5|humo en un cubo de 10 pies durante 1 asalto
+`;
+
+export type Mundano = { clave: string; nombre: string; ingles: string; precio: number; peso: number; texto: string };
+export const MUNDANOS: Mundano[] = filas(MUNDANOS_DATOS).map(([nombre, ingles, precio, peso_, texto]) => ({
+  clave: slug(nombre), nombre, ingles, precio: n(precio), peso: n(peso_), texto: texto ?? "",
+}));
+
+export function describirPocion(p: Pocion) {
+  return {
+    nombre: p.nombre,
+    notas: [p.texto, p.aceite ? "se aplica a un objeto" : "", `NL ${p.nl}`, `${po(p.precio)} (${p.ingles})`].filter(Boolean).join(" · "),
+    precio: p.precio,
+    corto: p.nombre,
+  };
+}
+
+export function describirMundano(m: Mundano) {
+  return {
+    nombre: m.nombre,
+    notas: [m.texto, peso(m.peso), `${po(m.precio)} (${m.ingles})`].filter(Boolean).join(" · "),
     precio: m.precio,
     corto: m.nombre,
   };

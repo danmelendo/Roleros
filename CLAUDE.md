@@ -110,7 +110,8 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
   - 176 dotes;
   - 75 armas y 18 armaduras y escudos;
   - 37 propiedades mágicas (bonificador +1/+2 y las de precio fijo baratas);
-  - 82 objetos maravillosos de NL ≤ 7.
+  - 82 objetos maravillosos de NL ≤ 7;
+  - 64 pociones y aceites, y 50 objetos de equipo de aventurero.
 
 **Pendiente o ideas, por orden de utilidad**
 1. **Cartas:** las tablas `cartas` y `cartas_jugador` ya existen, pero no tienen interfaz.
@@ -122,7 +123,7 @@ supabase/seeds/         cuestionario (las preguntas, sin trama)
    - clases hasta el nivel 20;
    - conjuros de nivel 4 o más;
    - objetos maravillosos de NL mayor;
-   - anillos, varitas, pociones, pergaminos y equipo mundano (cuerdas, raciones…), que hoy no están.
+   - anillos, varitas y pergaminos, que hoy no están.
 5. **Revisar nombres:** los nombres en español de algunos conjuros, dotes y objetos son traducción propia. Al lado va el inglés para buscarlos en d20pfsrd.
 6. **Avisos y requisitos:**
    - El asistente no comprueba los requisitos de las dotes.
