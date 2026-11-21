@@ -925,7 +925,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
           ${e ? `<span class="estado-pg ${e.k}">${e.t}</span>` : ""}
         </div>
         ${st ? `<div class="stats">${esc(st)}</div>` : ""}
-        ${extra ? `<div class="stats">${esc(extra)}</div>` : ""}
+        ${extra ? `<div class="stats extra">${esc(extra)}</div>` : ""}
         ${c.notas ? `<div class="notas">${esc(c.notas)}</div>` : ""}
         ${chips ? `<div class="chips">${chips}</div>` : ""}
       </div>

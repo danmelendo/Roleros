@@ -248,3 +248,35 @@ dialog:has(.vista-bloque) { max-width: 640px; }
 .texto-bloque p { margin: 0 0 2px; padding-left: 1em; text-indent: -1em; }
 .texto-bloque b { font-weight: 600; }
 .texto-bloque .sep { margin: 10px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rubrica); color: var(--rubrica); font: 600 12px var(--titulo); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* Móvil: la fila del portátil (5 columnas fijas) no cabe; se apila en tres
+   pisos: iniciativa · quién · CA, luego los PG a lo ancho y los botones.
+   Los ataques solo se ven en la fila del turno y en las elegidas. */
+@media (max-width: 760px) {
+  .barra { padding: 8px 10px; gap: 6px; }
+  .barra h1 { font-size: 18px; margin-right: 0; }
+  .barra .boton { padding: 5px 8px; font-size: 11px; }
+  .rejilla { padding: 10px 8px 80px; gap: 12px; }
+  .banner { padding: 10px 12px; }
+  .banner h2 { font-size: 20px; }
+  .fila {
+    grid-template-columns: 50px minmax(0, 1fr) 42px;
+    grid-template-areas: "ini quien ca" "pg pg pg" "acc acc acc";
+    gap: 6px 8px; align-items: start; padding: 8px 8px 8px 6px;
+  }
+  .ini { grid-area: ini; }
+  .ini input { width: 48px; font-size: 20px; }
+  .quien { grid-area: quien; }
+  .quien .nombre { font-size: 17px; gap: 4px 6px; }
+  .quien .stats { font-size: 13px; line-height: 1.3; }
+  .fila:not(.turno):not(.sel) .stats.extra { display: none; }
+  .ca { grid-area: ca; }
+  .pg { grid-area: pg; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 10px; }
+  .pg .num { white-space: nowrap; }
+  .pg .barrapg { grid-column: 1 / -1; grid-row: 2; }
+  .acciones { grid-area: acc; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .acciones .icono { width: 34px; height: 30px; }
+  .acciones .boton.peq { padding: 3px 10px; font-size: 11px; }
+  .cuerpo-panel { padding: 12px 10px 16px; }
+  .panel { position: static; max-height: none; }
+}
