@@ -43,6 +43,7 @@ export type Bloque = {
 
 const limpiar = (t: string) => t
   .replace(/\r/g, "")
+  .replace(/\*/g, "")         // **negrita** y *cursiva* del bestiario de la campaña
   .replace(/[‐-―−]/g, "-")
   .replace(/×/g, "x")
   .replace(/ /g, " ")
@@ -77,7 +78,7 @@ function leerAtaques(linea: string | null, modo: Ataque["modo"]): Ataque[] {
   const out: Ataque[] = [];
   partir(linea, /^\s(?:or|o)\s/i).forEach((grupo, opcion) => {
     for (const parte of partir(grupo, /^(?:,|\s(?:and|y)\s)/i)) {
-      const m = parte.match(/^(?:(\d+)\s+)?(.+?)\s+((?:[+-]\d+\/)*[+-]\d+)\s+(touch\s+|de toque\s+)?\((.*)\)\s*$/i);
+      const m = parte.match(/^(?:(\d+)\s+)?(.+?)\s+((?:[+-]\d+\/)*[+-]\d+)\s+(touch\s+|(?:de\s+)?toque\s+)?\((.*)\)\s*$/i);
       if (!m) continue;
       const [, n, nombre, bonos, toque, dentro] = m;
       const d = dentro.match(/^\s*(\d+d\d+(?:\s*[+-]\s*\d+)?|\d+)?\s*(?:\/\s*(\d+)\s*-\s*20)?\s*(?:\/\s*x\s*(\d))?\s*(.*)$/i);
@@ -133,7 +134,7 @@ export function leerBloque(entrada: string): Bloque | null {
   def("Resiste:", /\b(?:Resist|Resistencias?)\s+([^;\n]+)/);
   def("RC", /\b(?:SR|RC)\s+(\d+)/);
   def("Débil:", /\b(?:Weaknesses|Debilidades)\s+([^;\n]+)/i);
-  def("Def.:", /\b(?:Defensive Abilities|Aptitudes defensivas)\s+([^;\n]+)/i);
+  def("Def.:", /\b(?:Defensive Abilities|Aptitudes defensivas|Habilidad(?:es)? defensivas?|Defensivas)\s+([^;\n]+)/i);
   def("Curación rápida", /\b(?:fast healing|curación rápida)\s+(\d+)/i);
   def("Regeneración", /\b(?:regeneration|regeneración)\s+([^;\n)]+)/i);
 
@@ -142,7 +143,7 @@ export function leerBloque(entrada: string): Bloque | null {
     vd: cab?.[2] ?? null,
     xp: primero(t, /\b(?:XP|PX)\s+([\d.,]+)/),
     tipo: linea(/^((?:LG|NG|CG|LN|N|CN|LE|NE|CE|LB|NB|CB|NM|CM|LM)\s+.+)$/),
-    ini: num(primero(t, /\b(?:Init|Iniciativa|Inic\.)\s+([+-]\d+)/i) ?? undefined),
+    ini: num(primero(t, /\b(?:Init|Iniciativa|Inic\.|Ini)\s+([+-]\d+)/i) ?? undefined),
     percepcion: num(primero(t, /\b(?:Perception|Percepción)\s+([+-]\d+)/i) ?? undefined),
     ca: ca ? Number(ca[1]) : caSola ? Number(caSola[1]) : null,
     toque: ca ? Number(ca[2]) : null,

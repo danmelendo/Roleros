@@ -259,6 +259,13 @@ export async function pjsParaCombate(): Promise<PJCombate[]> {
   });
 }
 
+/** Bestiario de la campaña (solo el máster): bloques de estadísticas para la mesa de combate. */
+export type Bestia = { id: string; grupo: string; nombre: string; vd: string | null; cuantos: number; bando: "enemigo" | "aliado" | "companero"; bloque: string };
+
+export async function listarBestiario(): Promise<Bestia[]> {
+  return ok(await supabase.from("bestiario").select("id, grupo, nombre, vd, cuantos, bando, bloque").order("orden"));
+}
+
 /** Solo cambia pg.actual de la ficha (función poner_pg; el resto del JSON no se toca). */
 export async function apuntarPG(jugadorId: string, actual: number): Promise<void> {
   ok(await supabase.rpc("poner_pg", { p_jugador: jugadorId, p_actual: actual }));

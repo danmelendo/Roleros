@@ -32,9 +32,13 @@ export type PJDeFicha = {
   percepcion: number | null;
 };
 
+/** Bloque del bestiario de la campaña (vive en la base de datos, solo para el máster). */
+export type Bestia = { id: string; grupo: string; nombre: string; vd: string | null; cuantos: number; bando: Bando; bloque: string };
+
 export type Conexion = {
   cargarPJs: () => Promise<PJDeFicha[]>;
   apuntarPG: (jugadorId: string, pg: number) => Promise<void>;
+  cargarBestiario: () => Promise<Bestia[]>;
 };
 
 type TipoEfecto = "estado" | "buff" | "debuff";
@@ -68,6 +72,7 @@ type Criatura = {
   defensas?: string[];
   especiales?: string | null;
   velocidad?: string | null;
+  bestia?: string;            // id en el bestiario de la campaña: su bloque completo se puede abrir
   notas: string;
   ini: number | null;
   grupo?: string | null;
@@ -80,6 +85,7 @@ type Plantilla = {
   aliado: boolean; companero?: boolean;
   toque?: number | null; desprevenido?: number | null; fort?: number | null; ref?: number | null; vol?: number | null; percepcion?: number | null;
   bloque?: Bloque | null;
+  bestia?: string;
 };
 type Bando = "enemigo" | "aliado" | "companero";
 const BANDOS: [Bando, string][] = [["enemigo", "Enemigo"], ["aliado", "Aliado (solo este combate)"], ["companero", "Compañero del grupo (se queda)"]];
@@ -193,6 +199,11 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
   let leyendo = false;
   let vivo = true;
   let bloque: Bloque | null = null;        // bloque de estadísticas leído en la pestaña PNJ
+  let bestiario: Bestia[] | null = null;   // se lee de la base de datos al abrir la pestaña PNJ
+  let leidos = new Map<string, Bloque | null>();
+  let leyendoBest = false;
+  let errorBest = "";
+  const abiertos = new Set<string>();      // grupos del bestiario desplegados
   const B: Record<string, string | boolean> = {}; // borradores de los formularios del panel
 
   function cargar(): Mesa | null {
@@ -224,6 +235,79 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     render();
   }
   const aviso = (t: string, k: Aviso["k"] = "malo", html = false) => { avisos = [{ t, k, html }]; render(); };
+
+  /* -------------------------------------------------------- bestiario -- */
+  async function leerBestiario() {
+    if (leyendoBest) return;
+    leyendoBest = true;
+    errorBest = "";
+    render();
+    try {
+      bestiario = await conexion.cargarBestiario();
+      leidos = new Map();
+    } catch (e) {
+      errorBest = e instanceof Error ? e.message : "sin conexión";
+    } finally {
+      leyendoBest = false;
+      if (vivo) render();
+    }
+  }
+  const bestia = (idB: string | undefined) => bestiario?.find((x) => x.id === idB);
+  const bloqueDe = (x: Bestia) => {
+    if (!leidos.has(x.id)) leidos.set(x.id, leerBloque(x.bloque));
+    return leidos.get(x.id)!;
+  };
+  /** Rellena el formulario de «Nuevo PNJ» con lo que trae un bloque. */
+  function rellenar(b: Bloque, extra: Record<string, string | boolean>) {
+    bloque = b;
+    const t = (v: number | null) => (v == null ? "" : String(v));
+    Object.assign(B, {
+      "en-nombre": b.nombre, "en-pg": String(b.pg ?? b.dadosPG ?? ""), "en-ca": t(b.ca),
+      "en-mod": t(b.ini), "en-n": "1", "en-bloque": "", "en-guardar": true,
+      "en-notas": "", // defensas y ataques ya salen en la fila
+      "en-toque": t(b.toque), "en-desp": t(b.desprevenido),
+      "en-fort": t(b.fort), "en-ref": t(b.ref), "en-vol": t(b.vol),
+      "en-perc": t(b.percepcion), "en-bestia": "",
+      ...extra,
+    });
+    avisos = [];
+    render();
+    raiz.querySelector<HTMLInputElement>('[data-foco="en-n"]')?.select();
+  }
+  function usarBestia(idB: string | undefined) {
+    const x = bestia(idB);
+    if (!x) return;
+    const b = bloqueDe(x);
+    if (!b) return aviso(`No entiendo el bloque de ${x.nombre}.`);
+    if (dlg.open) dlg.close("no");
+    pestana = "pnj";
+    rellenar(b, { "en-nombre": x.nombre, "en-n": String(x.cuantos), "en-tipo": x.bando, "en-guardar": false, "en-bestia": x.id });
+  }
+  /** Marca del texto del bestiario: **negrita**, *cursiva* (ya escapado). */
+  const marcado = (l: string) => esc(l).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
+  const SEPARADOR = /^(Defensa|Ataque|Tácticas|Estadísticas|Ecología|Aptitudes especiales|Botín|Tesoro)$/i;
+  /** El bloque completo, con tácticas, conjuros y aptitudes, para leerlo en la mesa. */
+  function verBestia(idB: string | undefined) {
+    if (!bestiario) {
+      void leerBestiario().then(() => { if (bestiario) verBestia(idB); });
+      return;
+    }
+    const x = bestia(idB);
+    if (!x) return aviso("Ese bloque ya no está en el bestiario de la campaña.");
+    const [, ...resto] = x.bloque.split("\n");
+    dlg.innerHTML = `<form method="dialog" class="pagina vista-bloque">
+      <h2>${esc(x.nombre)}${x.vd ? ` <small>VD ${esc(x.vd)}</small>` : ""}</h2>
+      <p class="tenue de-donde">${esc(x.grupo)}</p>
+      <div class="texto-bloque">${resto.map((l) => (SEPARADOR.test(l.trim()) ? `<div class="sep">${esc(l)}</div>` : `<p>${marcado(l)}</p>`)).join("")}</div>
+      <div class="fila-botones">
+        <button type="button" class="boton" data-a="cerrar">Cerrar</button>
+        <button type="button" class="boton prim" data-a="usarBestia" data-bestia="${esc(x.id)}" title="Rellena el formulario de Nuevo PNJ">Usar en la mesa</button>
+      </div>
+    </form>`;
+    dlg.onclose = null;
+    dlg.returnValue = "";
+    dlg.showModal();
+  }
 
   const C = (id: string | null | undefined) => (id ? S.criaturas[id] : undefined);
   const val = (k: string, def = "") => esc(B[k] ?? def);
@@ -570,6 +654,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     const tipo = (B["en-tipo"] || "enemigo") as Bando;
     const aliado = tipo !== "enemigo", companero = tipo === "companero";
     const comun = B["en-comun"] !== false;
+    const deBestiario = typeof B["en-bestia"] === "string" && B["en-bestia"] ? B["en-bestia"] : undefined;
     // Datos de la ficha: lo escrito a mano manda; si no, lo del bloque pegado.
     const dato = (k: string, deBloque: number | null | undefined) => entero(B[k], null) ?? deBloque ?? null;
     const extra = {
@@ -591,7 +676,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       for (let k = 0; k < cuantos; k++) {
         const pg = Math.max(1, tirar(pgTx)!.total);
         const id = uid();
-        const c: Criatura = { id, pj: false, aliado, companero, nombre: numerar ? `${base} ${max + k + 1}` : base, pgMax: pg, pg, temp: 0, noLetal: 0, ca, mod, notas, ini: null, grupo, espera: false, ...extra };
+        const c: Criatura = { id, pj: false, aliado, companero, nombre: numerar ? `${base} ${max + k + 1}` : base, pgMax: pg, pg, temp: 0, noLetal: 0, ca, mod, notas, ini: null, grupo, espera: false, bestia: deBestiario, ...extra };
         if (bloque) {
           Object.assign(c, {
             dmc: bloque.dmc, ataques: bloque.ataques, vd: bloque.vd,
@@ -604,13 +689,14 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       log(`Entran ${cuantos} × ${base}${companero ? " (compañero del grupo)" : aliado ? " (aliado)" : ""}.`);
       if (S.activo) avisos.push({ t: `Apunta la iniciativa de ${base} en su casilla para colocarlo${cuantos > 1 ? "s" : ""} en su sitio.`, k: "" });
       if (B["en-guardar"]) {
-        const p: Plantilla = { nombre: base, pg: pgTx, ca, mod, notas, aliado, companero, ...extra, bloque };
+        const p: Plantilla = { nombre: base, pg: pgTx, ca, mod, notas, aliado, companero, ...extra, bloque, bestia: deBestiario };
         const i = S.plantillas.findIndex((x) => x.nombre.toLowerCase() === base.toLowerCase());
         if (i >= 0) S.plantillas[i] = p; else S.plantillas.push(p);
         S.plantillas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
       }
       bloque = null; // el siguiente "Añadir" ya no arrastra este bloque (queda en sus fichas si se guardó)
       B["en-guardar"] = false; // guardar ficha es para este PNJ, no para los siguientes
+      B["en-bestia"] = "";
     });
   }
   function alternarPJ(id: string) {
@@ -760,7 +846,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
           <button class="boton prim grande" data-a="empezar" ${hay ? "" : "disabled"}>Empezar combate</button></div>
         <ol class="pasos tenue">
           <li>En <b>Grupo</b>, añade a la mesa los PJ (salen de sus fichas).</li>
-          <li>En <b>PNJ</b>, añade enemigos y aliados (o usa sus fichas guardadas). Los compañeros que llevas tú se crean ahí una vez y luego se añaden desde <b>Grupo</b>.</li>
+          <li>En <b>PNJ</b>, añade enemigos y aliados: del bestiario de la campaña, de tus fichas guardadas o pegando un bloque. Los compañeros que llevas tú se crean ahí una vez y luego se añaden desde <b>Grupo</b>.</li>
           <li>Tirad iniciativa con dados y apunta cada resultado en su casilla (un grupo de enemigos comparte la suya).</li>
           <li><b>Empezar combate</b> ordena la lista. Después, <kbd>Espacio</kbd> pasa el turno.</li>
         </ol>
@@ -776,6 +862,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="boton prim grande" data-a="siguiente" title="Espacio">Siguiente turno ▸</button>
       </div>
       ${c ? referencia(c) : ""}
+      ${c?.bestia ? `<div class="fila-botones"><button class="boton peq" data-a="verBestia" data-bestia="${esc(c.bestia)}">📖 Bloque completo: tácticas, conjuros…</button></div>` : ""}
       ${av || rec ? `<div class="recordatorios">${av}${rec}</div>` : ""}
     </div>`;
   }
@@ -854,6 +941,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="icono" data-a="subir" data-id="${id}" title="Subir" ${i <= 0 ? "disabled" : ""}>↑</button>
         <button class="icono" data-a="bajar" data-id="${id}" title="Bajar" ${i >= S.orden.length - 1 ? "disabled" : ""}>↓</button>
         <button class="icono" data-a="editar" data-id="${id}" title="Editar">✎</button>
+        ${c.bestia ? `<button class="icono" data-a="verBestia" data-bestia="${esc(c.bestia)}" title="Ver su bloque completo">📖</button>` : ""}
         <button class="icono" data-a="quitar" data-id="${id}" title="${fijo(c) ? "Sacar del combate" : "Quitar"}">✕</button>
         ${turno ? `<button class="boton peq" data-a="retrasar" data-id="${id}" title="Retrasar el turno">Retrasar</button>` : ""}
         ${S.activo && c.espera ? `<button class="boton peq prim" data-a="actuar" data-id="${id}">Actuar ya</button>` : ""}
@@ -932,7 +1020,8 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <div class="tenue">PG ${b.pg ?? "—"}${b.dadosPG ? ` (${esc(b.dadosPG)})` : ""} · CA ${b.ca ?? "—"}${b.toque != null ? `, toque ${b.toque}, desprev. ${b.desprevenido}` : ""} · inic. ${signo(b.ini)} · Fort ${signo(b.fort)} Ref ${signo(b.ref)} Vol ${signo(b.vol)}${b.dmc != null ? ` · DMC ${b.dmc}` : ""}${b.percepcion != null ? ` · Percepción ${signo(b.percepcion)}` : ""}</div>
         <div class="tenue">${b.ataques.length ? `${b.ataques.length} ataque${b.ataques.length > 1 ? "s" : ""} (se ven en su fila y en su turno)` : "Sin ataques reconocidos"}${b.defensas.length ? " · " + esc(b.defensas.join(" · ")) : ""}</div>
       </div>` : "";
-    return `<div class="seccion"><span class="etiqueta">Pegar bloque de estadísticas</span>
+    return `${seccionBestiario()}
+    <div class="seccion"><span class="etiqueta">Pegar bloque de estadísticas</span>
       <textarea data-b="en-bloque" data-foco="en-bloque" rows="${b ? 2 : 5}" placeholder="Copia el bloque entero de d20pfsrd.com (desde «Ghoul CR 1» hasta CMB/CMD) y pégalo aquí: rellena PG, CA, iniciativa, salvaciones, defensas y ataques.">${val("en-bloque")}</textarea>
       <div class="fila-botones"><button class="boton" data-a="leerBloque">Leer bloque</button></div>
       ${vista}
@@ -966,6 +1055,35 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
         <button class="boton peq" data-a="plantilla" data-i="${i}" title="Rellena el formulario de arriba">Usar</button>
         <button class="icono" data-a="borrarPlantilla" data-i="${i}" title="Borrar la ficha">✕</button></div>`).join("")}</div>`
         : `<p class="ayuda">Aquí quedan las fichas de PNJ que guardes (guardias, clérigos, mercenarios, criaturas…) para usarlas en otros combates. Marca «Guardar su ficha» al añadirlos.</p>`}
+    </div>`;
+  }
+
+  function seccionBestiario() {
+    let cuerpo = "";
+    if (!bestiario) {
+      cuerpo = `<p class="ayuda">${leyendoBest ? "Leyendo el bestiario…" : errorBest ? `No he podido leer el bestiario (${esc(errorBest)}).` : ""}</p>`;
+    } else if (!bestiario.length) {
+      cuerpo = `<p class="ayuda">El bestiario de la campaña está vacío.</p>`;
+    } else {
+      const grupos = new Map<string, Bestia[]>();
+      for (const x of bestiario) grupos.set(x.grupo, [...(grupos.get(x.grupo) ?? []), x]);
+      cuerpo = [...grupos.entries()].map(([g, xs]) => {
+        const abierto = abiertos.has(g);
+        return `<button class="grupo-best${abierto ? " si" : ""}" data-a="grupoBest" data-g="${esc(g)}">${abierto ? "▾" : "▸"} ${esc(g || "Sin grupo")} <small>(${xs.length})</small></button>
+        ${abierto ? `<div class="lineas">${xs.map((x) => {
+          const b = bloqueDe(x);
+          const datos = [x.vd ? `VD ${x.vd}` : "", b?.pg != null ? `PG ${b.pg}` : "", b?.ca != null ? `CA ${b.ca}` : "", x.cuantos > 1 ? `×${x.cuantos}` : ""].filter(Boolean).join(" · ");
+          return `<div class="linea">
+            <span class="t"><b>${esc(x.nombre)}</b><br><small>${esc(datos)}</small></span>
+            <button class="boton peq" data-a="verBestia" data-bestia="${esc(x.id)}" title="Bloque completo, con tácticas">Ver</button>
+            <button class="boton peq prim" data-a="usarBestia" data-bestia="${esc(x.id)}" title="Rellena el formulario de Nuevo PNJ">Usar</button>
+          </div>`;
+        }).join("")}</div>` : ""}`;
+      }).join("");
+    }
+    return `<div class="seccion"><span class="etiqueta">Bestiario de la campaña</span>
+      ${cuerpo}
+      <div class="fila-botones"><button class="boton peq" data-a="leerBestiario" ${leyendoBest ? "disabled" : ""}>↻ Releer el bestiario</button></div>
     </div>`;
   }
 
@@ -1043,6 +1161,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       pestana = b.dataset.p ?? "acciones";
       render();
       if (pestana === "grupo") void leerFichas(false); // fichas recién creadas o cambiadas en el biombo
+      if (pestana === "pnj" && !bestiario) void leerBestiario();
     },
     subir: (b) => cambiar(() => mover(id(b), -1)),
     bajar: (b) => cambiar(() => mover(id(b), 1)),
@@ -1089,20 +1208,17 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
     leerBloque: () => {
       const b = leerBloque(texto("en-bloque"));
       if (!b) return aviso("No reconozco ese bloque. Copia desde el nombre (con su CR) hasta la defensa y el ataque.");
-      bloque = b;
-      Object.assign(B, {
-        "en-nombre": b.nombre, "en-pg": String(b.pg ?? b.dadosPG ?? ""), "en-ca": b.ca != null ? String(b.ca) : "",
-        "en-mod": b.ini != null ? String(b.ini) : "", "en-n": "1", "en-bloque": "", "en-guardar": true,
-        "en-notas": "", // defensas y ataques ya salen en la fila
-        "en-toque": b.toque != null ? String(b.toque) : "", "en-desp": b.desprevenido != null ? String(b.desprevenido) : "",
-        "en-fort": b.fort != null ? String(b.fort) : "", "en-ref": b.ref != null ? String(b.ref) : "", "en-vol": b.vol != null ? String(b.vol) : "",
-        "en-perc": b.percepcion != null ? String(b.percepcion) : "",
-      });
-      avisos = [];
-      render();
-      raiz.querySelector<HTMLInputElement>('[data-foco="en-n"]')?.select();
+      rellenar(b, {});
     },
-    olvidarBloque: () => { bloque = null; render(); },
+    olvidarBloque: () => { bloque = null; B["en-bestia"] = ""; render(); },
+    leerBestiario: () => void leerBestiario(),
+    grupoBest: (b) => {
+      const g = b.dataset.g ?? "";
+      if (abiertos.has(g)) abiertos.delete(g); else abiertos.add(g);
+      render();
+    },
+    verBestia: (b) => verBestia(b.dataset.bestia),
+    usarBestia: (b) => usarBestia(b.dataset.bestia),
     equipar: () => {
       const t = textoEquipo(String(B["en-equipo"] ?? ""), String(B["en-mejora"] ?? "normal"));
       if (!t) return;
@@ -1126,7 +1242,7 @@ export function montarMesa(host: HTMLElement, conexion: Conexion): () => void {
       const t = (v: number | null | undefined) => (v == null ? "" : String(v));
       Object.assign(B, {
         "en-nombre": p.nombre, "en-pg": p.pg, "en-ca": String(p.ca), "en-mod": String(p.mod), "en-notas": p.notas,
-        "en-tipo": p.companero ? "companero" : p.aliado ? "aliado" : "enemigo", "en-n": "1", "en-guardar": false,
+        "en-tipo": p.companero ? "companero" : p.aliado ? "aliado" : "enemigo", "en-n": "1", "en-guardar": false, "en-bestia": p.bestia ?? "",
         "en-toque": t(p.toque ?? p.bloque?.toque), "en-desp": t(p.desprevenido ?? p.bloque?.desprevenido),
         "en-fort": t(p.fort ?? p.bloque?.fort), "en-ref": t(p.ref ?? p.bloque?.ref), "en-vol": t(p.vol ?? p.bloque?.vol),
         "en-perc": t(p.percepcion ?? p.bloque?.percepcion),

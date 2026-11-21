@@ -234,3 +234,17 @@ label.linea { cursor: pointer; }
 .recordatorio .boton { vertical-align: middle; }
 .linea.sin-ficha { opacity: 0.7; }
 .en-mesa { font: 600 10px var(--titulo); letter-spacing: 0.08em; text-transform: uppercase; color: var(--musgo); }
+
+/* Bestiario de la campaña: grupos plegables y bloque completo en un diálogo. */
+.grupo-best { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 5px 6px; border: 0; border-radius: 3px; background: rgba(255, 250, 235, 0.3); color: var(--tinta); font: 600 13px var(--titulo); letter-spacing: 0.04em; cursor: pointer; }
+.grupo-best:hover, .grupo-best.si { background: rgba(255, 250, 235, 0.6); }
+.grupo-best small { color: var(--tinta-tenue); font-weight: 400; }
+.grupo-best + .lineas { margin: 2px 0 8px 10px; }
+dialog:has(.vista-bloque) { max-width: 640px; }
+.vista-bloque h2 { margin-bottom: 2px; }
+.vista-bloque h2 small { font-size: 14px; color: var(--tinta-tenue); margin-left: 6px; }
+.vista-bloque .de-donde { margin: 0 0 10px; font-size: 14px; font-style: italic; }
+.texto-bloque { max-height: 65vh; overflow-y: auto; padding-right: 6px; color: var(--tinta); font-size: 16px; line-height: 1.3; }
+.texto-bloque p { margin: 0 0 2px; padding-left: 1em; text-indent: -1em; }
+.texto-bloque b { font-weight: 600; }
+.texto-bloque .sep { margin: 10px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rubrica); color: var(--rubrica); font: 600 12px var(--titulo); letter-spacing: 0.1em; text-transform: uppercase; }

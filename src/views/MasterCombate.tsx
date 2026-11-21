@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { apuntarPG, pjsParaCombate } from "../lib/api";
+import { apuntarPG, listarBestiario, pjsParaCombate } from "../lib/api";
 import { useSesion } from "../lib/sesion";
 import { montarMesa } from "../combate/mesa";
 
@@ -13,7 +13,7 @@ export function MasterCombate() {
 
   useEffect(() => {
     if (!esMaster || !host.current) return;
-    return montarMesa(host.current, { cargarPJs: pjsParaCombate, apuntarPG });
+    return montarMesa(host.current, { cargarPJs: pjsParaCombate, apuntarPG, cargarBestiario: listarBestiario });
   }, [esMaster]);
 
   if (comprobando) return <main className="pantalla mesa-combate"><p className="tenue-claro">Comprobando…</p></main>;
